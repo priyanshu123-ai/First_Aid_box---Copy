@@ -24,17 +24,17 @@ const ProfileView = () => {
           bloodGroup: decoded.bg || "",
           Height: decoded.h || "",
           Weight: decoded.w || "",
-          OrganDonor: decoded.od || "",
-          Allergies: decoded.al || "",
-          CurrentMedications: decoded.med || "",
-          MedicalConditions: decoded.mc || "",
-          InsuranceProvider: decoded.ip || "",
-          PolicyNumber: decoded.pn || "",
-          contactDetails: (decoded.ec || []).map((c) => ({
-            name: c.n || "",
-            phoneNumber: c.p || "",
-            relation: c.r || "",
-          })),
+          // OrganDonor: decoded.od || "",
+          // Allergies: decoded.al || "",
+          // CurrentMedications: decoded.med || "",
+          // MedicalConditions: decoded.mc || "",
+          // InsuranceProvider: decoded.ip || "",
+          // PolicyNumber: decoded.pn || "",
+          // contactDetails: (decoded.ec || []).map((c) => ({
+          //   name: c.n || "",
+          //   phoneNumber: c.p || "",
+          //   relation: c.r || "",
+          // })),
         });
         setLoading(false);
         return;
@@ -131,9 +131,9 @@ const ProfileView = () => {
     <div style={styles.page}>
       {/* Emergency Banner */}
       <div style={styles.banner}>
-        <div style={styles.bannerIcon}>🏥</div>
-        <h1 style={styles.bannerTitle}>Emergency Medical Profile</h1>
-        <p style={styles.bannerSub}>Critical info for first responders</p>
+        <div style={styles.bannerIcon}>🚨</div>
+        <h1 style={styles.bannerTitle}>Emergency SOS</h1>
+        <p style={styles.bannerSub}>Press the button to send an emergency alert email</p>
       </div>
 
       {/* SOS Button */}
@@ -153,104 +153,12 @@ const ProfileView = () => {
          "🚨 SEND EMERGENCY SOS"}
       </button>
       <p style={styles.sosHint}>
-        Press to send emergency email with your live location & this person's medical info
+        Sends emergency email with your live GPS location
       </p>
-
-      {/* Profile Card */}
-      <div style={styles.card}>
-        {/* Person Info */}
-        <div style={styles.personHeader}>
-          <div style={styles.avatar}>
-            {(profile.FullName || "?")[0].toUpperCase()}
-          </div>
-          <div>
-            <h2 style={styles.personName}>{profile.FullName || "Unknown"}</h2>
-            <p style={styles.personSub}>
-              DOB: {profile.DateOfBirth || "N/A"} • {profile.phone || "N/A"}
-            </p>
-          </div>
-        </div>
-
-        {/* Vitals Grid */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>🩸 Vital Information</h3>
-          <div style={styles.vitalsGrid}>
-            <div style={styles.vitalBox}>
-              <span style={styles.vitalLabel}>Blood Group</span>
-              <span style={styles.vitalValueRed}>{profile.bloodGroup || "N/A"}</span>
-            </div>
-            <div style={styles.vitalBox}>
-              <span style={styles.vitalLabel}>Organ Donor</span>
-              <span style={styles.vitalValue}>{profile.OrganDonor || "N/A"}</span>
-            </div>
-            <div style={styles.vitalBox}>
-              <span style={styles.vitalLabel}>Height</span>
-              <span style={styles.vitalValue}>{profile.Height ? `${profile.Height} cm` : "N/A"}</span>
-            </div>
-            <div style={styles.vitalBox}>
-              <span style={styles.vitalLabel}>Weight</span>
-              <span style={styles.vitalValue}>{profile.Weight ? `${profile.Weight} kg` : "N/A"}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Allergies */}
-        {profile.Allergies && (
-          <div style={styles.alertSection}>
-            <h3 style={styles.alertTitle}>⚠️ ALLERGIES</h3>
-            <p style={styles.alertText}>{profile.Allergies}</p>
-          </div>
-        )}
-
-        {/* Medications */}
-        {profile.CurrentMedications && (
-          <div style={styles.infoSection}>
-            <h3 style={styles.infoTitle}>💊 Current Medications</h3>
-            <p style={styles.infoText}>{profile.CurrentMedications}</p>
-          </div>
-        )}
-
-        {/* Medical Conditions */}
-        {profile.MedicalConditions && (
-          <div style={styles.infoSection}>
-            <h3 style={styles.infoTitle}>🏷️ Medical Conditions</h3>
-            <p style={styles.infoText}>{profile.MedicalConditions}</p>
-          </div>
-        )}
-
-        {/* Emergency Contacts */}
-        {profile.contactDetails && profile.contactDetails.length > 0 && (
-          <div style={styles.contactSection}>
-            <h3 style={styles.contactTitle}>📞 Emergency Contacts</h3>
-            {profile.contactDetails.map((c, i) => (
-              <div key={i} style={styles.contactRow}>
-                <div>
-                  <div style={styles.contactName}>{c.name || `Contact ${i + 1}`}</div>
-                  <div style={styles.contactRelation}>{c.relation || "N/A"}</div>
-                </div>
-                <a href={`tel:${c.phoneNumber}`} style={styles.callButton}>
-                  📱 {c.phoneNumber || "N/A"}
-                </a>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Insurance */}
-        {(profile.InsuranceProvider || profile.PolicyNumber) && (
-          <div style={styles.infoSection}>
-            <h3 style={styles.infoTitle}>🛡️ Insurance</h3>
-            <p style={styles.infoText}>
-              <strong>Provider:</strong> {profile.InsuranceProvider || "N/A"}<br />
-              <strong>Policy:</strong> {profile.PolicyNumber || "N/A"}
-            </p>
-          </div>
-        )}
-      </div>
 
       {/* Footer */}
       <p style={styles.footer}>
-        Emergency medical profile • For authorized use only
+        Emergency SOS • For authorized use only
       </p>
     </div>
   );
@@ -263,52 +171,57 @@ const styles = {
     padding: "16px",
     fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
     color: "#fff",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
   },
   banner: {
     textAlign: "center",
     padding: "20px 16px 12px",
   },
   bannerIcon: {
-    fontSize: "40px",
-    marginBottom: "8px",
+    fontSize: "60px",
+    marginBottom: "12px",
   },
   bannerTitle: {
-    fontSize: "22px",
+    fontSize: "28px",
     fontWeight: "800",
     color: "#fff",
-    margin: "0 0 4px",
+    margin: "0 0 6px",
     letterSpacing: "-0.5px",
   },
   bannerSub: {
-    fontSize: "13px",
+    fontSize: "14px",
     color: "rgba(255,255,255,0.6)",
     margin: 0,
   },
   sosButton: {
     display: "block",
     width: "100%",
-    padding: "18px",
-    fontSize: "20px",
+    maxWidth: "400px",
+    padding: "24px",
+    fontSize: "22px",
     fontWeight: "800",
     color: "#fff",
     background: "linear-gradient(135deg, #dc2626, #b91c1c)",
     border: "3px solid rgba(255,255,255,0.3)",
-    borderRadius: "16px",
+    borderRadius: "20px",
     cursor: "pointer",
-    marginTop: "12px",
-    boxShadow: "0 0 30px rgba(220, 38, 38, 0.5), 0 4px 15px rgba(0,0,0,0.3)",
+    marginTop: "20px",
+    boxShadow: "0 0 40px rgba(220, 38, 38, 0.5), 0 4px 20px rgba(0,0,0,0.3)",
     animation: "pulse 2s infinite",
     letterSpacing: "1px",
     transition: "all 0.3s ease",
   },
   sosButtonLoading: {
     background: "linear-gradient(135deg, #f59e0b, #d97706)",
-    boxShadow: "0 0 30px rgba(245, 158, 11, 0.5)",
+    boxShadow: "0 0 40px rgba(245, 158, 11, 0.5)",
     animation: "none",
   },
   sosButtonSent: {
     background: "linear-gradient(135deg, #16a34a, #15803d)",
-    boxShadow: "0 0 30px rgba(22, 163, 74, 0.5)",
+    boxShadow: "0 0 40px rgba(22, 163, 74, 0.5)",
     animation: "none",
   },
   sosButtonError: {
@@ -317,168 +230,9 @@ const styles = {
   },
   sosHint: {
     textAlign: "center",
-    fontSize: "11px",
-    color: "rgba(255,255,255,0.5)",
-    margin: "8px 0 16px",
-  },
-  card: {
-    background: "rgba(255,255,255,0.08)",
-    backdropFilter: "blur(20px)",
-    borderRadius: "20px",
-    border: "1px solid rgba(255,255,255,0.15)",
-    overflow: "hidden",
-  },
-  personHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    padding: "20px",
-    background: "rgba(255,255,255,0.05)",
-    borderBottom: "1px solid rgba(255,255,255,0.1)",
-  },
-  avatar: {
-    width: "50px",
-    height: "50px",
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "22px",
-    fontWeight: "700",
-    color: "#fff",
-    flexShrink: 0,
-  },
-  personName: {
-    fontSize: "20px",
-    fontWeight: "700",
-    margin: "0 0 2px",
-    color: "#fff",
-  },
-  personSub: {
     fontSize: "12px",
-    color: "rgba(255,255,255,0.6)",
-    margin: 0,
-  },
-  section: {
-    padding: "16px 20px",
-    borderBottom: "1px solid rgba(255,255,255,0.08)",
-  },
-  sectionTitle: {
-    fontSize: "14px",
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.8)",
-    margin: "0 0 12px",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  vitalsGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "10px",
-  },
-  vitalBox: {
-    background: "rgba(255,255,255,0.06)",
-    borderRadius: "12px",
-    padding: "12px",
-    textAlign: "center",
-    border: "1px solid rgba(255,255,255,0.08)",
-  },
-  vitalLabel: {
-    display: "block",
-    fontSize: "10px",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
     color: "rgba(255,255,255,0.5)",
-    marginBottom: "4px",
-  },
-  vitalValue: {
-    display: "block",
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#fff",
-  },
-  vitalValueRed: {
-    display: "block",
-    fontSize: "24px",
-    fontWeight: "800",
-    color: "#ef4444",
-  },
-  alertSection: {
-    margin: "0 20px",
-    padding: "14px",
-    background: "rgba(239, 68, 68, 0.15)",
-    border: "1px solid rgba(239, 68, 68, 0.3)",
-    borderRadius: "12px",
-    marginTop: "16px",
-  },
-  alertTitle: {
-    fontSize: "13px",
-    fontWeight: "800",
-    color: "#fca5a5",
-    margin: "0 0 6px",
-    textTransform: "uppercase",
-  },
-  alertText: {
-    fontSize: "14px",
-    color: "#fecaca",
-    margin: 0,
-    lineHeight: "1.4",
-  },
-  infoSection: {
-    padding: "14px 20px",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
-  },
-  infoTitle: {
-    fontSize: "13px",
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.7)",
-    margin: "0 0 6px",
-  },
-  infoText: {
-    fontSize: "14px",
-    color: "rgba(255,255,255,0.85)",
-    margin: 0,
-    lineHeight: "1.5",
-  },
-  contactSection: {
-    padding: "16px 20px",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
-  },
-  contactTitle: {
-    fontSize: "14px",
-    fontWeight: "700",
-    color: "#4ade80",
-    margin: "0 0 12px",
-  },
-  contactRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "10px 12px",
-    background: "rgba(74, 222, 128, 0.08)",
-    borderRadius: "12px",
-    marginBottom: "8px",
-    border: "1px solid rgba(74, 222, 128, 0.15)",
-  },
-  contactName: {
-    fontSize: "14px",
-    fontWeight: "600",
-    color: "#fff",
-  },
-  contactRelation: {
-    fontSize: "11px",
-    color: "rgba(255,255,255,0.5)",
-  },
-  callButton: {
-    padding: "8px 14px",
-    background: "rgba(74, 222, 128, 0.15)",
-    color: "#4ade80",
-    borderRadius: "10px",
-    textDecoration: "none",
-    fontSize: "13px",
-    fontWeight: "600",
-    border: "1px solid rgba(74, 222, 128, 0.2)",
+    margin: "12px 0 0",
   },
   footer: {
     textAlign: "center",
@@ -486,6 +240,7 @@ const styles = {
     color: "rgba(255,255,255,0.3)",
     padding: "20px 0",
     margin: 0,
+    marginTop: "auto",
   },
   loadingPage: {
     minHeight: "100vh",
