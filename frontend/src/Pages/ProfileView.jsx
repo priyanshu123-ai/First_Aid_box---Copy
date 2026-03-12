@@ -3,19 +3,49 @@ import { useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 
 const ProfileView = () => {
+
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sosStatus, setSosStatus] = useState(""); // "", "locating", "sent", "error"
+
+  const [sosStatus, setSosStatus] = useState("");
+  const [hospitals, setHospitals] = useState([]);
+
+  // Calculate distance
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+
+    const R = 6371;
+
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return (R * c).toFixed(2);
+  };
 
   useEffect(() => {
-    // Try to decode data from URL query parameter (embedded in QR code)
+
     const encodedData = searchParams.get("data");
+
     if (encodedData) {
+
       try {
-        const decoded = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
+
+        const decoded = JSON.parse(
+          decodeURIComponent(escape(atob(encodedData)))
+        );
+
         setProfile({
           FullName: decoded.n || "",
           DateOfBirth: decoded.dob || "",
@@ -23,120 +53,157 @@ const ProfileView = () => {
           phone: decoded.p || "",
           bloodGroup: decoded.bg || "",
           Height: decoded.h || "",
-          Weight: decoded.w || "",
-          // OrganDonor: decoded.od || "",
-          // Allergies: decoded.al || "",
-          // CurrentMedications: decoded.med || "",
-          // MedicalConditions: decoded.mc || "",
-          // InsuranceProvider: decoded.ip || "",
-          // PolicyNumber: decoded.pn || "",
-          // contactDetails: (decoded.ec || []).map((c) => ({
-          //   name: c.n || "",
-          //   phoneNumber: c.p || "",
-          //   relation: c.r || "",
-          // })),
+          Weight: decoded.w || ""
         });
+
         setLoading(false);
         return;
+
       } catch (err) {
-        console.error("Failed to decode QR data:", err);
+        console.log("QR decode error", err);
       }
     }
 
-    // Fallback: fetch from API by ID
     const fetchProfile = async () => {
+
       try {
-        setLoading(true);
+
         const res = await axios.get(
           `http://localhost:4000/api/v3/profileDetail/${id}`
         );
+
         if (res.data?.data) {
           setProfile(res.data.data);
         } else {
           setError("Profile not found");
         }
+
       } catch (err) {
+
         console.error(err);
-        setError("Failed to load profile.");
+        setError("Failed to load profile");
+
       } finally {
+
         setLoading(false);
+
       }
     };
 
-    if (id) {
-      fetchProfile();
-    } else {
-      setError("No profile data found.");
+    if (id) fetchProfile();
+    else {
+      setError("No profile data found");
       setLoading(false);
     }
+
   }, [id, searchParams]);
 
+
   const handleSOS = async () => {
+
+    const confirmSOS = window.confirm(
+      "Are you sure you want to send Emergency SOS?"
+    );
+
+    if (!confirmSOS) return;
+
     setSosStatus("locating");
+
     try {
-      // Get live GPS location
+
       const position = await new Promise((resolve, reject) => {
+
         if (!navigator.geolocation) {
           reject(new Error("Geolocation not supported"));
           return;
         }
+
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 10000
         });
+
       });
 
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
 
-      // Send SOS email via backend Nodemailer
+      // Overpass API
+      const url = `https://overpass-api.de/api/interpreter?data=[out:json];node(around:10000,${lat},${lng})["amenity"="hospital"];out;`;
+
+      const hospitalRes = await axios.get(url);
+
+      const nearbyHospitals = hospitalRes.data.elements
+        .slice(0, 5)
+        .map((h) => ({
+          name: h.tags?.name || "Unknown Hospital",
+          lat: h.lat,
+          lng: h.lon,
+          distance: getDistance(lat, lng, h.lat, h.lon)
+        }));
+
+      setHospitals(nearbyHospitals);
+
+      // Send mail
       await axios.post("http://localhost:4000/api/v4/mail", {
         email: profile.email,
-        name: profile.FullName || "Unknown Person",
-        relation: "Emergency SOS Alert",
-        phoneNumber: profile.phone || "N/A",
+        name: profile.FullName,
+        phoneNumber: profile.phone,
         location: { lat, lng },
+        hospitals: nearbyHospitals
       });
 
       setSosStatus("sent");
+
     } catch (err) {
+
       console.error(err);
+
       setSosStatus("error");
+
       setTimeout(() => setSosStatus(""), 3000);
+
     }
   };
 
+
   if (loading) {
+
     return (
       <div style={styles.loadingPage}>
         <div style={styles.spinner}></div>
         <p style={styles.loadingText}>Loading Medical Profile...</p>
       </div>
     );
+
   }
 
   if (error || !profile) {
+
     return (
       <div style={styles.errorPage}>
         <div style={styles.errorCard}>
-          <div style={styles.errorIcon}>⚠️</div>
           <h2 style={styles.errorTitle}>Profile Not Found</h2>
-          <p style={styles.errorText}>{error || "Unable to load profile."}</p>
+          <p style={styles.errorText}>{error}</p>
         </div>
       </div>
     );
+
   }
+
 
   return (
     <div style={styles.page}>
-      {/* Emergency Banner */}
+
       <div style={styles.banner}>
         <div style={styles.bannerIcon}>🚨</div>
         <h1 style={styles.bannerTitle}>Emergency SOS</h1>
-        <p style={styles.bannerSub}>Press the button to send an emergency alert email</p>
+        <p style={styles.bannerSub}>
+          Press the button to send emergency alert
+        </p>
       </div>
 
-      {/* SOS Button */}
+
       <button
         onClick={handleSOS}
         disabled={sosStatus === "locating"}
@@ -144,169 +211,199 @@ const ProfileView = () => {
           ...styles.sosButton,
           ...(sosStatus === "locating" ? styles.sosButtonLoading : {}),
           ...(sosStatus === "sent" ? styles.sosButtonSent : {}),
-          ...(sosStatus === "error" ? styles.sosButtonError : {}),
+          ...(sosStatus === "error" ? styles.sosButtonError : {})
         }}
       >
-        {sosStatus === "locating" ? "📍 Getting Location..." :
-         sosStatus === "sent" ? "✅ SOS Sent!" :
-         sosStatus === "error" ? "❌ Failed - Try Again" :
-         "🚨 SEND EMERGENCY SOS"}
+
+        {sosStatus === "locating"
+          ? "📍 Getting Location..."
+          : sosStatus === "sent"
+          ? "✅ SOS Sent!"
+          : sosStatus === "error"
+          ? "❌ Failed - Try Again"
+          : "🚨 SEND EMERGENCY SOS"}
+
       </button>
+
       <p style={styles.sosHint}>
         Sends emergency email with your live GPS location
       </p>
 
-      {/* Footer */}
+
+      {hospitals.length > 0 && (
+
+        <div style={styles.hospitalBox}>
+
+          <h2>🏥 Nearest Hospitals</h2>
+
+          {hospitals.map((h, i) => (
+
+            <div key={i} style={styles.hospitalCard}>
+
+              <h3>{h.name}</h3>
+
+              <p>📍 Distance: {h.distance} km away</p>
+
+              <div style={{ display: "flex", gap: "10px" }}>
+
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={styles.directionBtn}
+                >
+                  Get Directions
+                </a>
+
+              </div>
+
+            </div>
+
+          ))}
+
+        </div>
+
+      )}
+
       <p style={styles.footer}>
         Emergency SOS • For authorized use only
       </p>
+
     </div>
   );
 };
 
+
 const styles = {
+
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
+    background: "linear-gradient(135deg,#0f0c29,#302b63,#24243e)",
     padding: "16px",
-    fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
     color: "#fff",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "center"
   },
+
   banner: {
-    textAlign: "center",
-    padding: "20px 16px 12px",
+    textAlign: "center"
   },
+
   bannerIcon: {
-    fontSize: "60px",
-    marginBottom: "12px",
+    fontSize: "60px"
   },
+
   bannerTitle: {
     fontSize: "28px",
-    fontWeight: "800",
-    color: "#fff",
-    margin: "0 0 6px",
-    letterSpacing: "-0.5px",
+    fontWeight: "800"
   },
+
   bannerSub: {
     fontSize: "14px",
-    color: "rgba(255,255,255,0.6)",
-    margin: 0,
+    opacity: 0.7
   },
+
   sosButton: {
-    display: "block",
     width: "100%",
     maxWidth: "400px",
     padding: "24px",
     fontSize: "22px",
     fontWeight: "800",
     color: "#fff",
-    background: "linear-gradient(135deg, #dc2626, #b91c1c)",
-    border: "3px solid rgba(255,255,255,0.3)",
+    background: "#dc2626",
     borderRadius: "20px",
-    cursor: "pointer",
     marginTop: "20px",
-    boxShadow: "0 0 40px rgba(220, 38, 38, 0.5), 0 4px 20px rgba(0,0,0,0.3)",
-    animation: "pulse 2s infinite",
-    letterSpacing: "1px",
-    transition: "all 0.3s ease",
+    cursor: "pointer"
   },
+
   sosButtonLoading: {
-    background: "linear-gradient(135deg, #f59e0b, #d97706)",
-    boxShadow: "0 0 40px rgba(245, 158, 11, 0.5)",
-    animation: "none",
+    background: "#f59e0b"
   },
+
   sosButtonSent: {
-    background: "linear-gradient(135deg, #16a34a, #15803d)",
-    boxShadow: "0 0 40px rgba(22, 163, 74, 0.5)",
-    animation: "none",
+    background: "#16a34a"
   },
+
   sosButtonError: {
-    background: "linear-gradient(135deg, #dc2626, #991b1b)",
-    animation: "none",
+    background: "#991b1b"
   },
+
   sosHint: {
-    textAlign: "center",
     fontSize: "12px",
-    color: "rgba(255,255,255,0.5)",
-    margin: "12px 0 0",
+    opacity: 0.6
   },
+
+  hospitalBox: {
+    width: "100%",
+    maxWidth: "500px",
+    marginTop: "30px"
+  },
+
+  hospitalCard: {
+    background: "rgba(255,255,255,0.08)",
+    padding: "16px",
+    borderRadius: "12px",
+    marginTop: "12px"
+  },
+
+  directionBtn: {
+    background: "#2563eb",
+    padding: "8px 14px",
+    color: "#fff",
+    borderRadius: "8px",
+    textDecoration: "none"
+  },
+
   footer: {
-    textAlign: "center",
-    fontSize: "11px",
-    color: "rgba(255,255,255,0.3)",
-    padding: "20px 0",
-    margin: 0,
-    marginTop: "auto",
+    marginTop: "40px",
+    fontSize: "12px",
+    opacity: 0.4
   },
+
   loadingPage: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
     display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "column"
   },
+
   spinner: {
     width: "40px",
     height: "40px",
-    border: "4px solid rgba(255,255,255,0.1)",
+    border: "4px solid #ccc",
     borderTop: "4px solid #6366f1",
     borderRadius: "50%",
-    animation: "spin 1s linear infinite",
-    marginBottom: "16px",
+    animation: "spin 1s linear infinite"
   },
+
   loadingText: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: "15px",
+    marginTop: "10px"
   },
+
   errorPage: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
     display: "flex",
-    alignItems: "center",
     justifyContent: "center",
-    padding: "16px",
+    alignItems: "center"
   },
-  errorCard: {
-    background: "rgba(255,255,255,0.08)",
-    borderRadius: "20px",
-    padding: "40px",
-    textAlign: "center",
-    maxWidth: "400px",
-    border: "1px solid rgba(239,68,68,0.3)",
-  },
-  errorIcon: {
-    fontSize: "48px",
-    marginBottom: "16px",
-  },
-  errorTitle: {
-    fontSize: "20px",
-    fontWeight: "700",
-    color: "#fca5a5",
-    margin: "0 0 8px",
-  },
-  errorText: {
-    fontSize: "14px",
-    color: "rgba(255,255,255,0.6)",
-    margin: 0,
-  },
-};
 
-// Add CSS animations
-const styleSheet = document.createElement("style");
-styleSheet.textContent = `
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.02); opacity: 0.9; }
+  errorCard: {
+    background: "#222",
+    padding: "40px",
+    borderRadius: "20px"
+  },
+
+  errorTitle: {
+    color: "#fca5a5"
+  },
+
+  errorText: {
+    opacity: 0.7
   }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-`;
-document.head.appendChild(styleSheet);
+
+};
 
 export default ProfileView;

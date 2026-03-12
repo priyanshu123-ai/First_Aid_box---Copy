@@ -15,6 +15,28 @@ const treatmentSchema = new mongoose.Schema({
   notes: { type: String },
 });
 
+const prescriptionSchema = new mongoose.Schema({
+  imageUrl: { type: String, required: true },
+  cloudinaryId: { type: String },
+  ocrText: { type: String, default: "" },
+  ocrLanguage: { type: String, default: "en" },
+  translatedText: { type: String, default: "" },
+  analysis: {
+    medications: [{ name: String, dosage: String, purpose: String }],
+    diagnosedConditions: [String],
+    recommendedSpecialist: { type: String },
+    severity: { type: String },
+    warnings: [String],
+    followUpActions: [String],
+    summary: { type: String },
+    doctorName: { type: String },
+    hospitalName: { type: String },
+    prescriptionDate: { type: String },
+  },
+  title: { type: String, default: "Prescription" },
+  uploadedAt: { type: Date, default: Date.now },
+});
+
 const healthWalletSchema = new mongoose.Schema(
   {
     userId: {
@@ -25,6 +47,7 @@ const healthWalletSchema = new mongoose.Schema(
     },
     vaccinations: [vaccinationSchema],
     treatmentHistory: [treatmentSchema],
+    prescriptions: [prescriptionSchema],
     securityPin: { type: String, default: "" },
   },
   { timestamps: true }
