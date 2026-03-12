@@ -22,8 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, Heart, FileText, Shield, Phone, Plus, Trash2, Edit, Download, Activity, QrCode, Loader2, AlertCircle } from "lucide-react";
+import { User, Heart, FileText, Shield, Phone, Plus, Trash2, Edit, Download, Activity, QrCode, Loader2, AlertCircle, MapPin } from "lucide-react";
 import { EmergencyContext } from "@/context/EmergecyCon";
+import MapPicker from "@/components/MapPicker";
 
 const Profile = () => {
   const { setDetail } = useContext(EmergencyContext);
@@ -46,7 +47,7 @@ const Profile = () => {
   });
 
   const [emergencyContacts, setEmergencyContacts] = useState([
-    { id: Date.now(), name: "", phoneNumber: "", relation: "" },
+    { id: Date.now(), name: "", phoneNumber: "", relation: "", location: null },
   ]);
 
   const [editMode, setEditMode] = useState(true);
@@ -88,15 +89,16 @@ const Profile = () => {
                 name: c.name,
                 phoneNumber: c.phoneNumber,
                 relation: c.relation,
+                location: c.location || null,
               }))
-            : [{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]
+            : [{ id: Date.now(), name: "", phoneNumber: "", relation: "", location: null }]
         );
         setProfileId(data._id);
         setDetail(data);
         setEditMode(false); // show card view if data exists
       } else {
         setForm((prev) => ({ ...prev, Person_name: person }));
-        setEmergencyContacts([{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]);
+        setEmergencyContacts([{ id: Date.now(), name: "", phoneNumber: "", relation: "", location: null }]);
         setProfileId(null);
         setEditMode(true); // show form if no data
       }
@@ -104,7 +106,7 @@ const Profile = () => {
       // 404 means no profile yet — that's fine, show the form
       if (err.response?.status === 404) {
         setForm((prev) => ({ ...prev, Person_name: person }));
-        setEmergencyContacts([{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]);
+        setEmergencyContacts([{ id: Date.now(), name: "", phoneNumber: "", relation: "", location: null }]);
         setProfileId(null);
         setEditMode(true);
       } else {
@@ -134,7 +136,7 @@ const Profile = () => {
   const addEmergencyContact = () => {
     setEmergencyContacts([
       ...emergencyContacts,
-      { id: Date.now() + Math.random(), name: "", phoneNumber: "", relation: "" },
+      { id: Date.now() + Math.random(), name: "", phoneNumber: "", relation: "", location: null },
     ]);
   };
 
@@ -151,6 +153,7 @@ const Profile = () => {
           name: c.name,
           phoneNumber: c.phoneNumber,
           relation: c.relation,
+          ...(c.location ? { location: c.location } : {}),
         })),
       };
 
@@ -195,8 +198,9 @@ const Profile = () => {
               name: c.name,
               phoneNumber: c.phoneNumber,
               relation: c.relation,
+              location: c.location || null,
             }))
-          : [{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]
+          : [{ id: Date.now(), name: "", phoneNumber: "", relation: "", location: null }]
       );
       if (!profileId) setProfileId(res.data.data._id);
       setDetail(res.data.data);
@@ -225,7 +229,7 @@ const Profile = () => {
       pn: form.PolicyNumber,
       ec: emergencyContacts
         .filter((c) => c.name || c.phoneNumber)
-        .map((c) => ({ n: c.name, p: c.phoneNumber, r: c.relation })),
+        .map((c) => ({ n: c.name, p: c.phoneNumber, r: c.relation, l: c.location })),
     };
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(profileData))));
     return `${window.location.origin}/profile-view?data=${encoded}`;
@@ -534,6 +538,13 @@ const Profile = () => {
                         />
                       </div>
                     </div>
+                    
+                    <div className="pt-2 border-t border-dashed mt-4">
+                      <MapPicker 
+                        location={c.location} 
+                        onChange={(loc) => handleContactChange(c.id, "location", loc)} 
+                      />
+                    </div>
                   </div>
                 ))}
               </CardContent>
@@ -672,9 +683,31 @@ const Profile = () => {
                 </h3>
                 <div className="space-y-2 text-sm">
                   {emergencyContacts.map((c, index) => (
-                    <div key={c.id} className="p-2 rounded bg-background/50">
+                    <div key={c.id} className="p-3 rounded bg-background/50 space-y-2">
                       <p><strong>{c.name || `Contact ${index + 1}`}</strong> ({c.relation || "N/A"})</p>
-                      <p className="text-muted-foreground">{c.phoneNumber || "No phone"}</p>
+                      <p className="text-muted-foreground flex items-center gap-2">
+                          <Phone className="h-3 w-3" />
+                          {c.phoneNumber || "No phone"}
+                      </p>
+                      {c.location && (
+                          <div className="text-xs text-muted-foreground bg-muted p-2 rounded mt-2 border border-border">
+                              <p className="flex items-center gap-1 font-medium text-foreground mb-1">
+                                  <MapPin className="h-3 w-3 text-medical" /> Wait Point
+                              </p>
+                              <div className="grid grid-cols-2 gap-2">
+                                  <span>Lat: {c.location.lat.toFixed(6)}</span>
+                                  <span>Lng: {c.location.lng.toFixed(6)}</span>
+                              </div>
+                              <a 
+                                href={`https://www.google.com/maps?q=${c.location.lat},${c.location.lng}`} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="text-medical hover:underline mt-1 block"
+                              >
+                                View in Maps
+                              </a>
+                          </div>
+                      )}
                     </div>
                   ))}
                 </div>

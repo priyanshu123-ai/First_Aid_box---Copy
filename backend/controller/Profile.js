@@ -27,6 +27,27 @@ export const upsertProfile = async (req, res) => {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
+    // Validate contact details location if provided
+    if (contactDetails && Array.isArray(contactDetails)) {
+      for (const contact of contactDetails) {
+        if (contact.location) {
+          const { lat, lng } = contact.location;
+          if (lat === undefined || lng === undefined) {
+            return res.status(400).json({
+              success: false,
+              message: "Location must have both lat and lng",
+            });
+          }
+          if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            return res.status(400).json({
+              success: false,
+              message: "Invalid latitude or longitude values",
+            });
+          }
+        }
+      }
+    }
+
     // Check if profile already exists by email
     let existingProfile = await Profile.findOne({ email });
 
@@ -102,6 +123,27 @@ export const updateProfileById = async (req, res) => {
     const existingProfile = await Profile.findById(id);
     if (!existingProfile) {
       return res.status(404).json({ success: false, message: "Profile not found" });
+    }
+
+    // Validate contact details location if provided in req.body
+    if (req.body.contactDetails && Array.isArray(req.body.contactDetails)) {
+      for (const contact of req.body.contactDetails) {
+        if (contact.location) {
+          const { lat, lng } = contact.location;
+          if (lat === undefined || lng === undefined) {
+            return res.status(400).json({
+              success: false,
+              message: "Location must have both lat and lng",
+            });
+          }
+          if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            return res.status(400).json({
+              success: false,
+              message: "Invalid latitude or longitude values",
+            });
+          }
+        }
+      }
     }
 
     // Update fields from request body
