@@ -6,27 +6,17 @@ import { BrowserRouter } from "react-router-dom";
 
 import { ToastContainer } from "react-toastify";
 import AuthProvider from "./context/AuthContext.jsx";
- import EmergencyProvider from "./context/EmergecyCon";
+import EmergencyProvider from "./context/EmergecyCon";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
-
-    <AuthProvider>
-        
-      <EmergencyProvider>
-           <App />
-   
-
-      </EmergencyProvider>
-      
+      <AuthProvider>
+        <EmergencyProvider>
+          <App />
+        </EmergencyProvider>
         <ToastContainer />
-
-
-    </AuthProvider>
-    
-        
-     
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>
 );

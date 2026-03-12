@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card";
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+} from "@/components/ui/card";
 import axios from "axios";
 import {
   AlertCircle,
@@ -23,7 +24,7 @@ const Emergency = () => {
   const [location, setLocation] = useState(null);
   const [alertsSent, setAlertsSent] = useState([]);
   const [nearestHospitals, setNearestHospitals] = useState([]);
-  const { detail } = useContext(EmergencyContext); 
+  const { detail } = useContext(EmergencyContext);
 
   const handleSOS = async () => {
     setSosActive(true);
@@ -109,46 +110,46 @@ url:https://stunning-speculoos-18716f.netlify.app/
   };
 
 
- const handleEmergency = async (coords) => {
-  try {
-    if (!detail || !detail.email) {
-      toast.error("No email found in profile details");
-      return;
-    }
-
-    await axios.post("http://localhost:4000/api/v4/mail", {
-      email: detail.email,
-      
-      name: detail.FullName,
-      relation: detail.contactDetails?.[0]?.relation || "",
-      phoneNumber: detail.contactDetails?.[0]?.phoneNumber || "",
-      location: coords,
-
-      
-    });
-
-    console.log(detail.email,detail.relation,detail.phoneNumber)
-
-    toast.success("🚨 SOS alert sent to your registered email!");
-
-    // ✨ NEW: Trigger Push Notifications to emergency contacts
+  const handleEmergency = async (coords) => {
     try {
-       await axios.post("http://localhost:4000/api/v4/sos", {
+      if (!detail || !detail.email) {
+        toast.error("No email found in profile details");
+        return;
+      }
+
+      await axios.post("http://localhost:4000/api/v4/mail", {
+        email: detail.email,
+
+        name: detail.FullName,
+        relation: detail.contactDetails?.[0]?.relation || "",
+        phoneNumber: detail.contactDetails?.[0]?.phoneNumber || "",
+        location: coords,
+
+
+      });
+
+      console.log(detail.email, detail.relation, detail.phoneNumber)
+
+      toast.success("🚨 SOS alert sent to your registered email!");
+
+      // ✨ NEW: Trigger Push Notifications to emergency contacts
+      try {
+        await axios.post("http://localhost:4000/api/v4/sos", {
           detail: detail,
           location: coords
-       });
-       toast.success("📲 Push notifications dispatched to emergency contacts!");
-    } catch (pushErr) {
-       console.error("Failed to trigger push notifications:", pushErr);
-       // We don't want to show an error toaster here if email/whatsapp already succeeded 
-       // to avoid confusing the user during an emergency, but log it.
-    }
+        });
+        toast.success("📲 Push notifications dispatched to emergency contacts!");
+      } catch (pushErr) {
+        console.error("Failed to trigger push notifications:", pushErr);
+        // We don't want to show an error toaster here if email/whatsapp already succeeded 
+        // to avoid confusing the user during an emergency, but log it.
+      }
 
-  } catch (error) {
-    console.error(error);
-    toast.error("❌ Failed to send SOS email alert");
-  }
-};
+    } catch (error) {
+      console.error(error);
+      toast.error("❌ Failed to send SOS email alert");
+    }
+  };
 
 
 
@@ -225,11 +226,10 @@ url:https://stunning-speculoos-18716f.netlify.app/
                     {["SMS", "Email", "WhatsApp", "Push"].map((method) => (
                       <div
                         key={method}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                          alertsSent.includes(method)
-                            ? "bg-success/10 border border-success"
-                            : "bg-muted border border-transparent"
-                        }`}
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${alertsSent.includes(method)
+                          ? "bg-success/10 border border-success"
+                          : "bg-muted border border-transparent"
+                          }`}
                       >
                         {alertsSent.includes(method) && (
                           <Check className="h-5 w-5 text-success" />
@@ -257,57 +257,57 @@ url:https://stunning-speculoos-18716f.netlify.app/
             </Card>
 
             {/* Nearest Hospitals List */}
-           {nearestHospitals.length > 0 && (
-        <div className="max-w-6xl mx-auto bg-white p-6 rounded-2xl shadow">
-          <h2 className="text-2xl font-semibold mb-4">🏥 Nearest Hospitals</h2>
-          <p className="text-gray-500 mb-6">
-            Found {nearestHospitals.length} medical facilities near you
-          </p>
-          <div className="space-y-5">
-            {nearestHospitals.map((hospital, index) => (
-              <div
-                key={index}
-                className="border border-gray-200 p-5 rounded-xl flex flex-col sm:flex-row sm:justify-between sm:items-center hover:shadow-lg transition"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg">{hospital.name}</h3>
-                    <span className="bg-red-100 text-red-600 text-xs font-semibold px-2 py-1 rounded">
-                      24/7 Emergency
-                    </span>
-                  </div>
-                  <p className="text-gray-500 text-sm flex items-center gap-1 mt-1">
-                    <MapPin className="w-4 h-4" /> {hospital.address}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1 text-yellow-500 text-sm">
-                    <Star className="w-4 h-4" /> {hospital.rating || "4.5"} ★
-                  </div>
-                  <p className="text-gray-600 text-sm mt-1">
-                    Distance: {hospital.distance?.toFixed(2) || "—"} km away
-                  </p>
-                </div>
+            {nearestHospitals.length > 0 && (
+              <div className="max-w-6xl mx-auto bg-white p-6 rounded-2xl shadow">
+                <h2 className="text-2xl font-semibold mb-4">🏥 Nearest Hospitals</h2>
+                <p className="text-gray-500 mb-6">
+                  Found {nearestHospitals.length} medical facilities near you
+                </p>
+                <div className="space-y-5">
+                  {nearestHospitals.map((hospital, index) => (
+                    <div
+                      key={index}
+                      className="border border-gray-200 p-5 rounded-xl flex flex-col sm:flex-row sm:justify-between sm:items-center hover:shadow-lg transition"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-lg">{hospital.name}</h3>
+                          <span className="bg-red-100 text-red-600 text-xs font-semibold px-2 py-1 rounded">
+                            24/7 Emergency
+                          </span>
+                        </div>
+                        <p className="text-gray-500 text-sm flex items-center gap-1 mt-1">
+                          <MapPin className="w-4 h-4" /> {hospital.address}
+                        </p>
+                        <div className="flex items-center gap-1 mt-1 text-yellow-500 text-sm">
+                          <Star className="w-4 h-4" /> {hospital.rating || "4.5"} ★
+                        </div>
+                        <p className="text-gray-600 text-sm mt-1">
+                          Distance: {hospital.distance?.toFixed(2) || "—"} km away
+                        </p>
+                      </div>
 
-                <div className="flex flex-wrap gap-3 mt-3 sm:mt-0">
-                  <a
-                    href={`tel:${hospital.phone}`}
-                    className="inline-flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 transition"
-                  >
-                    <Phone className="w-4 h-4" /> Call Now
-                  </a>
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${hospital.lat},${hospital.lon}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
-                  >
-                    <Navigation className="w-4 h-4" /> Get Directions
-                  </a>
+                      <div className="flex flex-wrap gap-3 mt-3 sm:mt-0">
+                        <a
+                          href={`tel:${hospital.phone}`}
+                          className="inline-flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 transition"
+                        >
+                          <Phone className="w-4 h-4" /> Call Now
+                        </a>
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${hospital.lat},${hospital.lon}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
+                        >
+                          <Navigation className="w-4 h-4" /> Get Directions
+                        </a>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            )}
           </>
         )}
       </div>
