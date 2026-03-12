@@ -1,0 +1,23 @@
+﻿[dotenv@17.2.3] injecting env (14) from .env -- tip: Γ£à audit secrets and track compliance: https://dotenvx.com/ops
+Vision models: []
+All models: [
+  'llama-3.1-8b-instant',
+  'openai/gpt-oss-20b',
+  'meta-llama/llama-prompt-guard-2-22m',
+  'allam-2-7b',
+  'whisper-large-v3-turbo',
+  'qwen/qwen3-32b',
+  'openai/gpt-oss-120b',
+  'canopylabs/orpheus-arabic-saudi',
+  'meta-llama/llama-prompt-guard-2-86m',
+  'llama-3.3-70b-versatile',
+  'moonshotai/kimi-k2-instruct-0905',
+  'whisper-large-v3',
+  'meta-llama/llama-guard-4-12b',
+  'groq/compound',
+  'groq/compound-mini',
+  'openai/gpt-oss-safeguard-20b',
+  'meta-llama/llama-4-scout-17b-16e-instruct',
+  'moonshotai/kimi-k2-instruct',
+  'canopylabs/orpheus-v1-english'
+]

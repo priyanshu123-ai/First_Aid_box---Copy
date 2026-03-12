@@ -62,7 +62,9 @@ export const uploadPrescription = async (req, res) => {
   }
 };
 
-// ===== OCR: Extract text from prescription image using GROQ Vision =====
+import Tesseract from "tesseract.js";
+
+// ===== OCR: Extract text from prescription image using Tesseract + Groq =====
 export const ocrPrescription = async (req, res) => {
   try {
     const { prescriptionId } = req.body;
@@ -81,17 +83,25 @@ export const ocrPrescription = async (req, res) => {
       return res.status(404).json({ success: false, message: "Prescription not found." });
     }
 
-    // Use GROQ Vision (Llama Vision) for OCR
+    // 1. Tesseract OCR processing
+    console.log("Starting Tesseract OCR on:", prescription.imageUrl);
+    const { data: { text: rawText } } = await Tesseract.recognize(prescription.imageUrl, "eng", {
+      logger: m => console.log(m)
+    });
+    
+    if (!rawText || rawText.trim().length === 0) {
+      return res.status(500).json({ success: false, message: "Could not read any text from the given image." });
+    }
+
+    // 2. Groq text formatting processing
+    console.log("Structuring Tesseract OCR text with Groq Llama 3.3...");
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `You are a medical OCR expert. Extract ALL text from this medical prescription/report image with extreme accuracy. Include:
+          role: "system",
+          content: `You are a medical OCR expert. You will receive raw, messy text compiled from an OCR scan of a medical prescription. Clean it up, fix basic typos, and extract ALL details with extreme accuracy. Include:
 1. Doctor's name and qualifications
-2. Hospital/clinic name and address
+2. Hospital/clinic name and address 
 3. Patient details if visible
 4. Date of prescription
 5. All medications with dosage, frequency, and duration
@@ -99,25 +109,21 @@ export const ocrPrescription = async (req, res) => {
 7. Any special instructions or precautions
 8. Follow-up date if mentioned
 
-Format the extracted text clearly with proper labels. If text is in Hindi or any regional language, transliterate it to English as well. Be thorough — capture every piece of text visible in the image.`,
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: prescription.imageUrl,
-              },
-            },
-          ],
+Format the extracted text clearly with proper labels. If text is in Hindi or any regional language, transliterate it to English as well. Be thorough — capture every piece of text visible in the image. Return ONLY the cleaned and formatted plain text.`
+        },
+        {
+          role: "user",
+          content: rawText,
         },
       ],
-      model: "llama-3.2-11b-vision-preview",
+      model: "llama-3.3-70b-versatile",
       temperature: 0.1,
       max_tokens: 2048,
     });
 
-    const ocrText = chatCompletion.choices[0]?.message?.content || "";
+    const ocrText = chatCompletion.choices[0]?.message?.content || rawText;
 
-    // Save OCR text to prescription
+    // Save formatted OCR text to prescription
     prescription.ocrText = ocrText;
     await wallet.save();
 

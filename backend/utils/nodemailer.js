@@ -16,14 +16,16 @@ export const alert = async (req, res) => {
       },
     });
 
-  const mailOptions = {
+    const mailOptions = {
   from: process.env.EMAIL_USER,
-  to: email,
-  subject: "🚨 Emergency SOS Alert!",
+  to: Array.isArray(email) ? email.join(",") : email,
+  subject: req.body.subject || "🚨 Emergency SOS Alert!",
   html: `
     <div style="font-family: Arial, sans-serif; background:#f9f9f9; padding:20px; border-radius:8px;">
       <h2 style="color:#d32f2f; text-align:center;">🚨 Emergency SOS Alert</h2>
       <p style="font-size:16px;">An SOS alert has been triggered for <strong>${name || "your contact"}</strong>.</p>
+      
+      ${req.body.message ? `<p style="white-space: pre-wrap; font-size:14px;">${req.body.message}</p>` : ''}
       
       <table style="width:100%; margin-top:10px; border-collapse:collapse;">
         <tr>
@@ -37,7 +39,7 @@ export const alert = async (req, res) => {
       </table>
 
       <div style="margin-top:20px; text-align:center;">
-        <a href="https://www.google.com/maps?q=${location.lat},${location.lng}" 
+        <a href="${typeof location === 'string' ? location : `https://www.google.com/maps?q=${location.lat},${location.lng}`}" 
            style="display:inline-block; background:#d32f2f; color:#fff; padding:12px 20px; text-decoration:none; border-radius:5px; font-weight:bold;">
            📍 View Location on Google Maps
         </a>

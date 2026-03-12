@@ -1,6 +1,11 @@
 import HealthWallet from "../model/HealthWallet.model.js";
 import axios from "axios";
 import { analyzeSymptoms, analyzePrescriptionText } from "../utils/MedicalEngine.js";
+import Groq from "groq-sdk";
+import dotenv from "dotenv";
+
+dotenv.config();
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Get or create health wallet
 export const getHealthWallet = async (req, res) => {
@@ -43,7 +48,7 @@ export const saveHealthWallet = async (req, res) => {
   }
 };
 
-// Symptom Checker — Custom Engine (no API key needed)
+// Symptom Checker — Now powered by Groq AI
 export const symptomCheck = async (req, res) => {
   try {
     const { symptoms, age, gender } = req.body;
@@ -51,8 +56,47 @@ export const symptomCheck = async (req, res) => {
       return res.status(400).json({ success: false, message: "Please describe your symptoms." });
     }
 
-    const result = analyzeSymptoms(symptoms, age, gender);
-    res.json({ success: true, data: result });
+    try {
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: `You are a highly experienced AI medical symptom checker. Analyze the following symptoms for a ${age || "unknown"} year old ${gender || "person"}.
+Return a strict JSON response with this exact structure:
+{
+  "severity": "Mild|Moderate|Severe|Critical",
+  "possibleCauses": [
+    {
+      "name": "Condition Name",
+      "probability": "High|Medium|Low",
+      "description": "Brief explanation of this condition"
+    }
+  ],
+  "recommendedSpecialist": "Type of doctor to visit (e.g. General Physician, Cardiologist)",
+  "immediateActions": ["action 1", "action 2", "action 3"],
+  "disclaimer": "This is an AI-generated analysis. Always consult a qualified healthcare professional."
+}
+Return ONLY valid JSON.`,
+          },
+          {
+            role: "user",
+            content: symptoms,
+          },
+        ],
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.1,
+        max_tokens: 2048,
+      });
+
+      let analysisText = chatCompletion.choices[0]?.message?.content || "{}";
+      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+      let result = JSON.parse(jsonMatch ? jsonMatch[0] : analysisText);
+      return res.json({ success: true, data: result });
+    } catch (groqError) {
+      console.warn("Groq API failed, falling back to local engine:", groqError.message);
+      const result = analyzeSymptoms(symptoms, age, gender);
+      return res.json({ success: true, data: result });
+    }
   } catch (err) {
     console.error("Symptom Check Error:", err);
     res.status(500).json({ success: false, message: "Failed to analyze symptoms." });
@@ -162,7 +206,7 @@ out center 60;`;
   }
 };
 
-// Prescription Analyzer — Custom Engine (no API key needed)
+// Prescription Analyzer — Now powered by Groq AI
 export const analyzePrescription = async (req, res) => {
   try {
     const { prescriptionText } = req.body;
@@ -170,8 +214,48 @@ export const analyzePrescription = async (req, res) => {
       return res.status(400).json({ success: false, message: "Please provide prescription text." });
     }
 
-    const result = analyzePrescriptionText(prescriptionText);
-    res.json({ success: true, data: result });
+    try {
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: `You are a highly experienced medical prescription analyzer AI. Analyze the text and return a strict JSON response with this exact structure:
+{
+  "medications": [
+    {
+      "name": "...",
+      "dosage": "...",
+      "purpose": "Why this is prescribed"
+    }
+  ],
+  "diagnosedConditions": ["condition 1"],
+  "recommendedSpecialist": "Type of doctor to visit",
+  "severity": "Mild|Moderate|Severe|Critical",
+  "warnings": ["warning 1"],
+  "followUpActions": ["action 1"],
+  "summary": "Brief summary of the prescription"
+}
+Return ONLY valid JSON.`,
+          },
+          {
+            role: "user",
+            content: prescriptionText,
+          },
+        ],
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.1,
+        max_tokens: 2048,
+      });
+
+      let analysisText = chatCompletion.choices[0]?.message?.content || "{}";
+      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+      let result = JSON.parse(jsonMatch ? jsonMatch[0] : analysisText);
+      return res.json({ success: true, data: result });
+    } catch (groqError) {
+      console.warn("Groq API failed for prescription, falling back to local engine:", groqError.message);
+      const result = analyzePrescriptionText(prescriptionText);
+      return res.json({ success: true, data: result });
+    }
   } catch (err) {
     console.error("Prescription Analysis Error:", err);
     res.status(500).json({ success: false, message: "Failed to analyze prescription." });
