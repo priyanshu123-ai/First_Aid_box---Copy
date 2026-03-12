@@ -8,7 +8,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {Flame,Heart,Bone,AlertTriangle,Volume2,Camera,Video,X,
+import {
+  Flame, Heart, Bone, AlertTriangle, Volume2, Camera, Video, X,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "react-toastify";
@@ -104,8 +105,7 @@ const FirstAid = () => {
 
     window.speechSynthesis.speak(utterance);
     toast.success(
-      `Speaking in ${selectedLang} using ${
-        selectedVoice?.name || "default voice"
+      `Speaking in ${selectedLang} using ${selectedVoice?.name || "default voice"
       }`
     );
   };

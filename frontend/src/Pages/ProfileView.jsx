@@ -148,9 +148,9 @@ const ProfileView = () => {
         }}
       >
         {sosStatus === "locating" ? "📍 Getting Location..." :
-         sosStatus === "sent" ? "✅ SOS Sent!" :
-         sosStatus === "error" ? "❌ Failed - Try Again" :
-         "🚨 SEND EMERGENCY SOS"}
+          sosStatus === "sent" ? "✅ SOS Sent!" :
+            sosStatus === "error" ? "❌ Failed - Try Again" :
+              "🚨 SEND EMERGENCY SOS"}
       </button>
       <p style={styles.sosHint}>
         Press to send emergency email with your live location & this person's medical info

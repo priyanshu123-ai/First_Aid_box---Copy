@@ -84,11 +84,11 @@ const Profile = () => {
         setEmergencyContacts(
           data.contactDetails?.length > 0
             ? data.contactDetails.map((c) => ({
-                id: Date.now() + Math.random(),
-                name: c.name,
-                phoneNumber: c.phoneNumber,
-                relation: c.relation,
-              }))
+              id: Date.now() + Math.random(),
+              name: c.name,
+              phoneNumber: c.phoneNumber,
+              relation: c.relation,
+            }))
             : [{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]
         );
         setProfileId(data._id);
@@ -191,11 +191,11 @@ const Profile = () => {
       setEmergencyContacts(
         res.data.data.contactDetails?.length > 0
           ? res.data.data.contactDetails.map((c) => ({
-              id: Date.now() + Math.random(),
-              name: c.name,
-              phoneNumber: c.phoneNumber,
-              relation: c.relation,
-            }))
+            id: Date.now() + Math.random(),
+            name: c.name,
+            phoneNumber: c.phoneNumber,
+            relation: c.relation,
+          }))
           : [{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]
       );
       if (!profileId) setProfileId(res.data.data._id);

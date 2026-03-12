@@ -94,9 +94,8 @@ function Hospital() {
       <div className="max-w-4xl mx-auto text-center mb-8">
         <button
           onClick={handleGetLocation}
-          className={`transition-all duration-300 ${
-            loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-          } text-white px-6 py-3 rounded-lg font-medium shadow-md text-base sm:text-lg`}
+          className={`transition-all duration-300 ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+            } text-white px-6 py-3 rounded-lg font-medium shadow-md text-base sm:text-lg`}
           disabled={loading}
         >
           {loading ? "Fetching..." : "📍 Use My Location"}

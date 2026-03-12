@@ -19,7 +19,7 @@ function AuthProvider({ children }) {
     }
   };
 
- 
+
   const logout = async () => {
     try {
       await axios.post("http://localhost:4000/api/v1/logout", {}, { withCredentials: true });

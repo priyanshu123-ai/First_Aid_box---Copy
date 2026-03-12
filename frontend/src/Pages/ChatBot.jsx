@@ -13,7 +13,7 @@ const EmergencyChatbot = () => {
     {
       role: "assistant",
       content:
-       "👋 Hello! I'm your emergency medical assistant. I can help guide you through first-aid procedures. What emergency situation are you dealing with?\n\n⚠️ For life-threatening emergencies, please call 911 immediately."
+        "👋 Hello! I'm your emergency medical assistant. I can help guide you through first-aid procedures. What emergency situation are you dealing with?\n\n⚠️ For life-threatening emergencies, please call 911 immediately."
     },
   ]);
   const [input, setInput] = useState("");
@@ -116,65 +116,63 @@ const EmergencyChatbot = () => {
                 </Button>
               </CardHeader>
 
- <CardContent className="flex-1 p-0 flex flex-col overflow-y-scroll">
-  {/* Chat area with scroll */}
-  <div
-    ref={scrollRef}
-    className="flex-1 overflow-y-auto px-4 py-3 space-y-4"
-  >
-    {messages.map((msg, idx) => (
-      <div
-        key={idx}
-        className={`flex ${
-          msg.role === "user" ? "justify-end" : "justify-start"
-        }`}
-      >
-        <div
-          className={`max-w-[80%] rounded-lg p-3 text-sm whitespace-pre-wrap ${
-            msg.role === "user"
-              ? "bg-emergency text-white"
-              : "bg-muted"
-          }`}
-        >
-          {msg.content}
-        </div>
-      </div>
-    ))}
+              <CardContent className="flex-1 p-0 flex flex-col overflow-y-scroll">
+                {/* Chat area with scroll */}
+                <div
+                  ref={scrollRef}
+                  className="flex-1 overflow-y-auto px-4 py-3 space-y-4"
+                >
+                  {messages.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"
+                        }`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-lg p-3 text-sm whitespace-pre-wrap ${msg.role === "user"
+                            ? "bg-emergency text-white"
+                            : "bg-muted"
+                          }`}
+                      >
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))}
 
-    {isLoading && (
-      <div className="flex justify-start">
-        <div className="bg-muted rounded-lg p-3">
-          <Loader2 className="h-4 w-4 animate-spin" />
-        </div>
-      </div>
-    )}
-  </div>
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-muted rounded-lg p-3">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-  {/* Input fixed at bottom */}
-  <div className="p-4 border-t bg-background shrink-0">
-    <div className="flex gap-2">
-      <Input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyPress={handleKeyPress}
-        placeholder="Describe the emergency..."
-        disabled={isLoading}
-        className="flex-1"
-      />
-      <Button
-        onClick={sendMessage}
-        disabled={!input.trim() || isLoading}
-        variant="emergency"
-        size="icon"
-      >
-        <Send className="h-4 w-4" />
-      </Button>
-    </div>
-    <p className="text-xs text-muted-foreground mt-2 text-center">
-      AI guidance only • Call 911 for emergencies
-    </p>
-  </div>
-</CardContent>
+                {/* Input fixed at bottom */}
+                <div className="p-4 border-t bg-background shrink-0">
+                  <div className="flex gap-2">
+                    <Input
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Describe the emergency..."
+                      disabled={isLoading}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={sendMessage}
+                      disabled={!input.trim() || isLoading}
+                      variant="emergency"
+                      size="icon"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    AI guidance only • Call 911 for emergencies
+                  </p>
+                </div>
+              </CardContent>
 
 
             </Card>

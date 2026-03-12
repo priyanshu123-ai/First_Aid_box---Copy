@@ -142,21 +142,19 @@ const Register = () => {
               <div className="grid grid-cols-2 rounded-lg bg-gray-100 mb-6">
                 <button
                   onClick={() => setActiveTab("signin")}
-                  className={`flex-1 py-2 rounded-lg font-medium transition ${
-                    activeTab === "signin"
+                  className={`flex-1 py-2 rounded-lg font-medium transition ${activeTab === "signin"
                       ? "bg-white shadow text-gray-900"
                       : "text-gray-500"
-                  }`}
+                    }`}
                 >
                   Sign In
                 </button>
                 <button
                   onClick={() => setActiveTab("signup")}
-                  className={`flex-1 py-2 rounded-lg font-medium transition ${
-                    activeTab === "signup"
+                  className={`flex-1 py-2 rounded-lg font-medium transition ${activeTab === "signup"
                       ? "bg-white shadow text-gray-900"
                       : "text-gray-500"
-                  }`}
+                    }`}
                 >
                   Sign Up
                 </button>

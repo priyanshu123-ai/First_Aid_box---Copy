@@ -268,11 +268,10 @@ const HealthWallet = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-sm transition-all ${
-                activeTab === tab.id
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-sm transition-all ${activeTab === tab.id
                   ? "bg-background shadow-md text-foreground"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               <tab.icon className="h-4 w-4" />
               <span className="hidden sm:inline">{tab.label}</span>
@@ -707,11 +706,10 @@ const HealthWallet = () => {
                           <div key={i} className="p-3 rounded-lg border bg-muted/10">
                             <div className="flex items-center justify-between">
                               <h4 className="font-semibold">{cause.name}</h4>
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                cause.probability === "High" ? "bg-red-500/10 text-red-500" :
-                                cause.probability === "Medium" ? "bg-yellow-500/10 text-yellow-600" :
-                                "bg-green-500/10 text-green-600"
-                              }`}>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cause.probability === "High" ? "bg-red-500/10 text-red-500" :
+                                  cause.probability === "Medium" ? "bg-yellow-500/10 text-yellow-600" :
+                                    "bg-green-500/10 text-green-600"
+                                }`}>
                                 {cause.probability} probability
                               </span>
                             </div>
