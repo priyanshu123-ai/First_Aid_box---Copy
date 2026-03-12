@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Card,
   CardContent,
@@ -21,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, Heart, FileText, Shield, Phone, Plus, Trash2, Edit, Download, Activity } from "lucide-react";
+import { User, Heart, FileText, Shield, Phone, Plus, Trash2, Edit, Download, Activity, QrCode, Loader2, AlertCircle } from "lucide-react";
 import { EmergencyContext } from "@/context/EmergecyCon";
 
 const Profile = () => {
@@ -50,43 +51,76 @@ const Profile = () => {
 
   const [editMode, setEditMode] = useState(true);
   const [profileId, setProfileId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [sosLoading, setSosLoading] = useState(false);
 
   // Fetch profile by Person_name
-//   const fetchProfile = async (person) => {
-//     try {
-//     const res = await axios.get(
-//   `http://localhost:4000/api/v3/profile/person/${person}`,
-//   { withCredentials: true }
-// );
+  const fetchProfile = async (person) => {
+    try {
+      setLoading(true);
+      const res = await axios.get(
+        `http://localhost:4000/api/v3/profile/person/${person}`,
+        { withCredentials: true }
+      );
 
-//       if (res.data?.data) {
-//         const data = res.data.data;
-//         setForm(data);
-//         setEmergencyContacts(
-//           data.contactDetails?.map((c) => ({
-//             id: Date.now() + Math.random(),
-//             name: c.name,
-//             phoneNumber: c.phoneNumber,
-//             relation: c.relation,
-//           })) || [{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]
-//         );
-//         setProfileId(data._id);
-//         setEditMode(false); // show card view if data exists
-//       } else {
-//         setForm((prev) => ({ ...prev, Person_name: person }));
-//         setEmergencyContacts([{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]);
-//         setProfileId(null);
-//         setEditMode(true); // show form if no data
-//       }
-//     } catch (err) {
-//       console.error(err);
-//       setEditMode(true);
-//     }
-//   };
+      if (res.data?.data) {
+        const data = res.data.data;
+        setForm({
+          Person_name: data.Person_name || person,
+          FullName: data.FullName || "",
+          DateOfBirth: data.DateOfBirth || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          bloodGroup: data.bloodGroup || "",
+          Height: data.Height || "",
+          Weight: data.Weight || "",
+          OrganDonor: data.OrganDonor || "",
+          Allergies: data.Allergies || "",
+          CurrentMedications: data.CurrentMedications || "",
+          MedicalConditions: data.MedicalConditions || "",
+          InsuranceProvider: data.InsuranceProvider || "",
+          PolicyNumber: data.PolicyNumber || "",
+        });
+        setEmergencyContacts(
+          data.contactDetails?.length > 0
+            ? data.contactDetails.map((c) => ({
+                id: Date.now() + Math.random(),
+                name: c.name,
+                phoneNumber: c.phoneNumber,
+                relation: c.relation,
+              }))
+            : [{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]
+        );
+        setProfileId(data._id);
+        setDetail(data);
+        setEditMode(false); // show card view if data exists
+      } else {
+        setForm((prev) => ({ ...prev, Person_name: person }));
+        setEmergencyContacts([{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]);
+        setProfileId(null);
+        setEditMode(true); // show form if no data
+      }
+    } catch (err) {
+      // 404 means no profile yet — that's fine, show the form
+      if (err.response?.status === 404) {
+        setForm((prev) => ({ ...prev, Person_name: person }));
+        setEmergencyContacts([{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]);
+        setProfileId(null);
+        setEditMode(true);
+      } else {
+        console.error(err);
+        toast.error("Failed to load profile");
+        setEditMode(true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // useEffect(() => {
-  //   fetchProfile(form.Person_name);
-  // }, []);
+  useEffect(() => {
+    fetchProfile(form.Person_name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.id]: e.target.value });
   const handleSelectChange = (field, value) => setForm({ ...form, [field]: value });
@@ -138,21 +172,63 @@ const Profile = () => {
         toast.success("Profile created successfully!");
       }
 
-      setForm(res.data.data);
+      setForm({
+        Person_name: res.data.data.Person_name || form.Person_name,
+        FullName: res.data.data.FullName || "",
+        DateOfBirth: res.data.data.DateOfBirth || "",
+        email: res.data.data.email || "",
+        phone: res.data.data.phone || "",
+        bloodGroup: res.data.data.bloodGroup || "",
+        Height: res.data.data.Height || "",
+        Weight: res.data.data.Weight || "",
+        OrganDonor: res.data.data.OrganDonor || "",
+        Allergies: res.data.data.Allergies || "",
+        CurrentMedications: res.data.data.CurrentMedications || "",
+        MedicalConditions: res.data.data.MedicalConditions || "",
+        InsuranceProvider: res.data.data.InsuranceProvider || "",
+        PolicyNumber: res.data.data.PolicyNumber || "",
+      });
       setEmergencyContacts(
-        res.data.data.contactDetails?.map((c) => ({
-          id: Date.now() + Math.random(),
-          name: c.name,
-          phoneNumber: c.phoneNumber,
-          relation: c.relation,
-        })) || [{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]
+        res.data.data.contactDetails?.length > 0
+          ? res.data.data.contactDetails.map((c) => ({
+              id: Date.now() + Math.random(),
+              name: c.name,
+              phoneNumber: c.phoneNumber,
+              relation: c.relation,
+            }))
+          : [{ id: Date.now(), name: "", phoneNumber: "", relation: "" }]
       );
+      if (!profileId) setProfileId(res.data.data._id);
       setDetail(res.data.data);
       setEditMode(false);
     } catch (err) {
       console.error(err);
       toast.error("Failed to save profile");
     }
+  };
+
+  const getProfileQrData = () => {
+    // Encode profile data as base64 in a URL so the scanned page can show data + SOS button
+    const profileData = {
+      n: form.FullName,
+      dob: form.DateOfBirth,
+      e: form.email,
+      p: form.phone,
+      bg: form.bloodGroup,
+      h: form.Height,
+      w: form.Weight,
+      od: form.OrganDonor,
+      al: form.Allergies,
+      med: form.CurrentMedications,
+      mc: form.MedicalConditions,
+      ip: form.InsuranceProvider,
+      pn: form.PolicyNumber,
+      ec: emergencyContacts
+        .filter((c) => c.name || c.phoneNumber)
+        .map((c) => ({ n: c.name, p: c.phoneNumber, r: c.relation })),
+    };
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(profileData))));
+    return `${window.location.origin}/profile-view?data=${encoded}`;
   };
 
   const handleDownloadCard = () => {
@@ -168,8 +244,79 @@ const Profile = () => {
     });
   };
 
+  const handleSOS = async () => {
+    setSosLoading(true);
+    try {
+      // Get live location
+      const position = await new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("Geolocation not supported"));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+        });
+      });
 
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 
+      // Build emergency contacts email list
+      const contactEmails = emergencyContacts
+        .filter((c) => c.name || c.phoneNumber)
+        .map((c) => `${c.name} (${c.relation}): ${c.phoneNumber}`)
+        .join(", ");
+
+      const message = `🚨 EMERGENCY SOS ALERT!\n\n` +
+        `${form.FullName || "Someone"} needs IMMEDIATE HELP!\n\n` +
+        `📍 LIVE LOCATION:\n${mapsLink}\n\n` +
+        `🏥 MEDICAL INFO:\n` +
+        `Blood Group: ${form.bloodGroup || "N/A"}\n` +
+        `Allergies: ${form.Allergies || "None"}\n` +
+        `Medications: ${form.CurrentMedications || "None"}\n` +
+        `Conditions: ${form.MedicalConditions || "None"}\n\n` +
+        `📞 Emergency Contacts: ${contactEmails || "None saved"}\n\n` +
+        `Phone: ${form.phone || "N/A"}\n` +
+        `This is an automated emergency alert.`;
+
+      // Send email via backend
+      await axios.post(
+        "http://localhost:4000/api/v4/mail",
+        {
+          email: form.email,
+          subject: `🚨 EMERGENCY SOS - ${form.FullName || "User"} needs help!`,
+          message: message,
+          location: mapsLink,
+        },
+        { withCredentials: true }
+      );
+
+      toast.success("🚨 SOS Alert sent! Help is on the way.");
+    } catch (err) {
+      console.error(err);
+      if (err.code === 1 || err.message?.includes("denied")) {
+        toast.error("Location access denied. Please enable location permissions.");
+      } else {
+        toast.error("Failed to send SOS. Check your connection.");
+      }
+    } finally {
+      setSosLoading(false);
+    }
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-medical mx-auto" />
+          <p className="text-lg text-muted-foreground">Loading your medical profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle py-12 overflow-x-hidden">
@@ -544,18 +691,54 @@ const Profile = () => {
                   <p><strong>Policy Number:</strong> {form.PolicyNumber || "N/A"}</p>
                 </div>
               </div>
+
+              {/* QR Code Section */}
+              {profileId && (
+                <div className="p-6 rounded-lg bg-gradient-to-br from-medical/5 to-emergency/5 border-2 border-dashed border-medical/30">
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="flex items-center gap-2 text-medical">
+                      <QrCode className="h-6 w-6" />
+                      <h3 className="font-semibold text-lg">Scan for Emergency Info</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      Scan this QR code with any phone — your complete medical profile will appear directly. No internet needed.
+                    </p>
+                    <div className="p-4 bg-white rounded-xl shadow-lg">
+                      <QRCodeSVG
+                        value={getProfileQrData()}
+                        size={200}
+                        level="L"
+                        includeMargin={true}
+                        fgColor="#1a1a2e"
+                        bgColor="#ffffff"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
 
             {/* Actions */}
-            <div className="border-t p-6 bg-muted/20 flex justify-between gap-3">
-              <Button variant="outline" onClick={() => setEditMode(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Profile
+            <div className="border-t p-6 bg-muted/20 space-y-4">
+              {/* SOS Emergency Button */}
+              <Button
+                onClick={handleSOS}
+                disabled={sosLoading}
+                className="w-full py-6 text-lg font-bold bg-red-600 hover:bg-red-700 text-white shadow-lg animate-pulse hover:animate-none rounded-xl"
+              >
+                <AlertCircle className="h-6 w-6 mr-2" />
+                {sosLoading ? "Sending SOS..." : "🚨 EMERGENCY SOS"}
               </Button>
-              <Button variant="default" onClick={handleDownloadCard} className="bg-gradient-emergency shadow-glow">
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
+              <div className="flex justify-between gap-3">
+                <Button variant="outline" onClick={() => setEditMode(true)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+                <Button variant="default" onClick={handleDownloadCard} className="bg-gradient-emergency shadow-glow">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
+              </div>
             </div>
           </Card>
         </div>
