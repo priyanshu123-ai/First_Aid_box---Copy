@@ -10,14 +10,29 @@ const ContactDetailSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  email: {
+    type: String,
+  },
   relation: {
     type: String,
     
   },
+  location: {
+    lat: {
+      type: Number,
+    },
+    lng: {
+      type: Number,
+    },
+  },
 });
 
-// Main Profile schema
 const ProfileSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   Person_name: {
     type: String,
     enum: ["myself", "someone else"], // only two options
@@ -34,7 +49,6 @@ const ProfileSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true, // prevent duplicate emails
   },
   phone: {
     type: String,
@@ -73,6 +87,9 @@ const ProfileSchema = new mongoose.Schema({
   },
   PolicyNumber: {
     type: String,
+  },
+  fcmToken: {
+    type: String, // Store Firebase Cloud Messaging Token
   },
 }, { timestamps: true }); // automatically adds createdAt and updatedAt
 

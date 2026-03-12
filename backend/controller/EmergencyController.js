@@ -1,4 +1,6 @@
 import axios from "axios";
+import nodemailer from "nodemailer";
+import sendPushNotification from "../utils/pushNotification.js";
 
 export const getNearestHospitals = async (req, res) => {
   try {
@@ -29,6 +31,20 @@ export const getNearestHospitals = async (req, res) => {
         tags["addr:country"],
       ].filter(Boolean);
 
+      // Extract phone number from various OSM tags
+      const phone =
+        tags.phone ||
+        tags["contact:phone"] ||
+        tags["phone:emergency"] ||
+        tags["contact:mobile"] ||
+        null;
+
+      // Extract other useful info
+      const email = tags.email || tags["contact:email"] || null;
+      const website = tags.website || tags["contact:website"] || null;
+      const emergency = tags.emergency || null;
+      const openingHours = tags.opening_hours || null;
+
       // Calculate distance from current location
       const distance = getDistanceFromLatLonInKm(lat, lng, el.lat, el.lon);
 
@@ -38,6 +54,11 @@ export const getNearestHospitals = async (req, res) => {
         lat: el.lat,
         lon: el.lon,
         address: addressParts.join(", ") || "Address not available",
+        phone,
+        email,
+        website,
+        emergency,
+        openingHours,
         distance,
       };
     });
@@ -56,6 +77,155 @@ export const getNearestHospitals = async (req, res) => {
   } catch (error) {
     console.error("Error fetching hospitals:", error.message);
     res.status(500).json({ message: "Failed to fetch nearby hospitals" });
+  }
+};
+
+// Notify emergency contacts about the chosen hospital
+export const notifyEmergencyContact = async (req, res) => {
+  try {
+    const {
+      hospitalName,
+      hospitalAddress,
+      hospitalPhone,
+      hospitalLat,
+      hospitalLon,
+      patientName,
+      patientEmail,
+      patientPhone,
+      patientBloodGroup,
+      patientAllergies,
+      patientConditions,
+      emergencyContacts,
+    } = req.body;
+
+    if (!emergencyContacts || emergencyContacts.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No emergency contacts provided" });
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const hospitalMapLink = `https://www.google.com/maps?q=${hospitalLat},${hospitalLon}`;
+    const hospitalDirectionsLink = `https://www.google.com/maps/dir/?api=1&destination=${hospitalLat},${hospitalLon}`;
+
+    // Send email to each emergency contact
+    const emailPromises = emergencyContacts.map((contact) => {
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: contact.email || patientEmail,
+        subject: `🏥 Patient Alert: ${patientName || "A patient"} is heading to ${hospitalName}`,
+        html: `
+          <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #1e40af, #3b82f6); padding: 28px 24px; text-align: center;">
+              <h1 style="color: #fff; margin: 0; font-size: 22px; font-weight: 700;">🏥 Hospital Notification</h1>
+              <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">
+                A patient is being taken to the hospital below
+              </p>
+            </div>
+
+            <!-- Patient Info -->
+            <div style="padding: 24px;">
+              <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                <h2 style="margin: 0 0 12px; color: #dc2626; font-size: 16px;">👤 Patient Details</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #374151; width: 140px;">Name:</td>
+                    <td style="padding: 6px 0; color: #4b5563;">${patientName || "Not provided"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #374151;">Phone:</td>
+                    <td style="padding: 6px 0; color: #4b5563;">${patientPhone || "N/A"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #374151;">Blood Group:</td>
+                    <td style="padding: 6px 0; color: #4b5563;">${patientBloodGroup || "N/A"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #374151;">Allergies:</td>
+                    <td style="padding: 6px 0; color: #4b5563;">${patientAllergies || "None reported"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #374151;">Conditions:</td>
+                    <td style="padding: 6px 0; color: #4b5563;">${patientConditions || "None reported"}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Hospital Info -->
+              <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                <h2 style="margin: 0 0 12px; color: #1e40af; font-size: 16px;">🏥 Hospital Details</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #374151; width: 140px;">Hospital:</td>
+                    <td style="padding: 6px 0; color: #4b5563; font-weight: 600;">${hospitalName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #374151;">Address:</td>
+                    <td style="padding: 6px 0; color: #4b5563;">${hospitalAddress || "Address not available"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-weight: 600; color: #374151;">Phone:</td>
+                    <td style="padding: 6px 0; color: #4b5563;">${hospitalPhone || "Not available"}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Action Buttons -->
+              <div style="text-align: center; margin-top: 20px;">
+                <a href="${hospitalMapLink}" 
+                   style="display: inline-block; background: #1e40af; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; margin: 6px;">
+                   📍 View Hospital on Map
+                </a>
+                <a href="${hospitalDirectionsLink}" 
+                   style="display: inline-block; background: #16a34a; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; margin: 6px;">
+                   🧭 Get Directions
+                </a>
+                ${hospitalPhone ? `
+                <a href="tel:${hospitalPhone}" 
+                   style="display: inline-block; background: #dc2626; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; margin: 6px;">
+                   📞 Call Hospital
+                </a>` : ""}
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="background: #f3f4f6; padding: 16px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                This is an automated notification from Emergency Aid App.
+              </p>
+            </div>
+          </div>
+        `,
+      };
+
+      return transporter.sendMail(mailOptions);
+    });
+
+    await Promise.all(emailPromises);
+
+    console.log(
+      "Notification emails sent to:",
+      emergencyContacts.map((c) => c.email || patientEmail).join(", ")
+    );
+
+    res.status(200).json({
+      message: "Emergency contacts notified successfully",
+      notifiedCount: emergencyContacts.length,
+    });
+  } catch (err) {
+    console.error("Error notifying emergency contacts:", err.message);
+    res
+      .status(500)
+      .json({ message: "Failed to notify emergency contacts", error: err.message });
   }
 };
 
@@ -78,3 +248,59 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const d = R * c; // Distance in km
   return d;
 }
+
+
+export const triggerSOS = async (req, res) => {
+  try {
+    const { detail, location } = req.body;
+    
+    if (!detail || !location) {
+        return res.status(400).json({ success: false, message: "User details and location are required" });
+    }
+
+    if (!detail.contactDetails || detail.contactDetails.length === 0) {
+        return res.status(404).json({ success: false, message: "No emergency contacts found" });
+    }
+
+    // Prepare message content
+    const title = "🚨 EMERGENCY ALERT 🚨";
+    const body = `${detail.FullName || 'A user'} is in distress and has triggered an SOS alert. Please check the app for their live location.`;
+    const locationUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+
+    // Array to keep track of successful pushes
+    const successfulPushes = [];
+
+    // Loop through contacts and find profiles matching their phone numbers
+    for (const contact of detail.contactDetails) {
+        // Find profile with this phone number
+        // Clean the phone number string slightly if needed
+        const contactPhone = contact.phoneNumber.trim(); 
+        
+        try {
+            // Import Profile model lazily to avoid circular dependencies if any, otherwise import at top
+            const { Profile } = await import("../model/Profile.model.js");
+            
+            // Note: In real scenarios, phone number formatting (e.g., country codes) should match
+            const contactProfile = await Profile.findOne({ phone: contactPhone });
+
+            if (contactProfile && contactProfile.fcmToken) {
+                // We found a registered user with a device token
+                await sendPushNotification(contactProfile.fcmToken, title, body, locationUrl);
+                successfulPushes.push(contact.name);
+            }
+        } catch (err) {
+            console.error(`Error processing contact ${contact.name}:`, err);
+        }
+    }
+
+    res.status(200).json({ 
+        success: true, 
+        message: "Push alerts processed",
+        notifiedContacts: successfulPushes
+    });
+
+  } catch (error) {
+     console.error("SOS Trigger Error:", error);
+     res.status(500).json({ success: false, message: "Server error triggering SOS push notifications" });
+  }
+};

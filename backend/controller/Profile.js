@@ -1,6 +1,6 @@
 import { Profile } from "../model/Profile.model.js";
 
-// Create or update profile by email (POST)
+// Create or update profile (POST)
 export const upsertProfile = async (req, res) => {
   try {
     const {
@@ -22,13 +22,36 @@ export const upsertProfile = async (req, res) => {
       forWhom, // "myself" or "someone else"
     } = req.body;
 
+    const userId = req.userId;
+
     // Validate required fields
     if (!Person_name || !FullName || !DateOfBirth || !email || !phone || !bloodGroup) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
-    // Check if profile already exists by email
-    let existingProfile = await Profile.findOne({ email });
+    // Validate contact details location if provided
+    if (contactDetails && Array.isArray(contactDetails)) {
+      for (const contact of contactDetails) {
+        if (contact.location) {
+          const { lat, lng } = contact.location;
+          if (lat === undefined || lng === undefined) {
+            return res.status(400).json({
+              success: false,
+              message: "Location must have both lat and lng",
+            });
+          }
+          if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            return res.status(400).json({
+              success: false,
+              message: "Invalid latitude or longitude values",
+            });
+          }
+        }
+      }
+    }
+
+    // Check if profile already exists for this user and this Person_name type
+    let existingProfile = await Profile.findOne({ user: userId, Person_name });
 
     if (existingProfile) {
       // Update existing profile
@@ -36,6 +59,7 @@ export const upsertProfile = async (req, res) => {
         Person_name,
         FullName,
         DateOfBirth,
+        email,
         phone,
         bloodGroup,
         Height,
@@ -61,6 +85,7 @@ export const upsertProfile = async (req, res) => {
 
     // Create new profile
     const newProfile = await Profile.create({
+      user: userId,
       Person_name,
       FullName,
       DateOfBirth,
@@ -98,10 +123,32 @@ export const upsertProfile = async (req, res) => {
 export const updateProfileById = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.userId;
 
-    const existingProfile = await Profile.findById(id);
+    const existingProfile = await Profile.findOne({ _id: id, user: userId });
     if (!existingProfile) {
-      return res.status(404).json({ success: false, message: "Profile not found" });
+      return res.status(404).json({ success: false, message: "Profile not found or unauthorized" });
+    }
+
+    // Validate contact details location if provided in req.body
+    if (req.body.contactDetails && Array.isArray(req.body.contactDetails)) {
+      for (const contact of req.body.contactDetails) {
+        if (contact.location) {
+          const { lat, lng } = contact.location;
+          if (lat === undefined || lng === undefined) {
+            return res.status(400).json({
+              success: false,
+              message: "Location must have both lat and lng",
+            });
+          }
+          if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            return res.status(400).json({
+              success: false,
+              message: "Invalid latitude or longitude values",
+            });
+          }
+        }
+      }
     }
 
     // Update fields from request body
@@ -127,8 +174,9 @@ export const updateProfileById = async (req, res) => {
 export const profileDetailById = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.userId;
 
-    const profile = await Profile.findById(id);
+    const profile = await Profile.findOne({ _id: id, user: userId });
     if (!profile) {
       return res.status(404).json({ success: false, message: "Profile not found" });
     }
@@ -152,8 +200,9 @@ export const profileDetailById = async (req, res) => {
 export const profileByPersonName = async (req, res) => {
   try {
     const { type } = req.params;
+    const userId = req.userId;
 
-    const profile = await Profile.findOne({ Person_name: type });
+    const profile = await Profile.findOne({ user: userId, Person_name: type });
     if (!profile) {
       return res.status(404).json({ success: false, message: "Profile not found" });
     }
@@ -173,6 +222,39 @@ export const profileByPersonName = async (req, res) => {
   }
 };
 
+// Save FCM Token
+export const saveFCMToken = async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    const userId = req.userId;
+    
+    if (!fcmToken) {
+        return res.status(400).json({ success: false, message: "FCM token is required" });
+    }
 
+    // We can update all profiles owned by this user or just a specific one
+    // For now, let's update the "myself" profile
+    const profile = await Profile.findOneAndUpdate(
+        { user: userId, Person_name: "myself" },
+        { fcmToken },
+        { new: true }
+    );
 
+    if (!profile) {
+        return res.status(404).json({ success: false, message: "Profile not found" });
+    }
 
+    return res.status(200).json({
+        success: true,
+        message: "FCM token saved successfully",
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+        success: false,
+        message: "Server error while saving FCM token",
+        error: error.message,
+    });
+  }
+};

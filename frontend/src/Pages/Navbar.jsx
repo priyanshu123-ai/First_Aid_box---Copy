@@ -14,8 +14,10 @@ const Navbar = () => {
     { to: "/first-aid", label: "First Aid" },
     { to: "/emergency", label: "Emergency" },
     { to: "/hospitals", label: "Hospitals" },
-    { to: "/health-wallet", label: "Health Wallet" },
-    { to: "/profile", label: "My Profile" },
+    ...(currentUser ? [
+      { to: "/health-wallet", label: "Health Wallet" },
+      { to: "/profile", label: "My Profile" },
+    ] : []),
   ];
 
   return (
