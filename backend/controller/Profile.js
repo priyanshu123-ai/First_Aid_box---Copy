@@ -27,6 +27,27 @@ export const upsertProfile = async (req, res) => {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
+    // Validate contact details location if provided
+    if (contactDetails && Array.isArray(contactDetails)) {
+      for (const contact of contactDetails) {
+        if (contact.location) {
+          const { lat, lng } = contact.location;
+          if (lat === undefined || lng === undefined) {
+            return res.status(400).json({
+              success: false,
+              message: "Location must have both lat and lng",
+            });
+          }
+          if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            return res.status(400).json({
+              success: false,
+              message: "Invalid latitude or longitude values",
+            });
+          }
+        }
+      }
+    }
+
     // Check if profile already exists by email
     let existingProfile = await Profile.findOne({ email });
 
@@ -104,6 +125,27 @@ export const updateProfileById = async (req, res) => {
       return res.status(404).json({ success: false, message: "Profile not found" });
     }
 
+    // Validate contact details location if provided in req.body
+    if (req.body.contactDetails && Array.isArray(req.body.contactDetails)) {
+      for (const contact of req.body.contactDetails) {
+        if (contact.location) {
+          const { lat, lng } = contact.location;
+          if (lat === undefined || lng === undefined) {
+            return res.status(400).json({
+              success: false,
+              message: "Location must have both lat and lng",
+            });
+          }
+          if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            return res.status(400).json({
+              success: false,
+              message: "Invalid latitude or longitude values",
+            });
+          }
+        }
+      }
+    }
+
     // Update fields from request body
     Object.assign(existingProfile, req.body);
     await existingProfile.save();
@@ -173,6 +215,38 @@ export const profileByPersonName = async (req, res) => {
   }
 };
 
+// Save FCM Token
+export const saveFCMToken = async (req, res) => {
+  try {
+    // Assuming the frontend sends the email or person_name to identify the user
+    // Using email here as it is unique in the profile
+    const { email, fcmToken } = req.body;
+    
+    if (!email || !fcmToken) {
+        return res.status(400).json({ success: false, message: "Email and FCM token are required" });
+    }
 
+    const profile = await Profile.findOneAndUpdate(
+        { email },
+        { fcmToken },
+        { new: true }
+    );
 
+    if (!profile) {
+        return res.status(404).json({ success: false, message: "Profile not found" });
+    }
 
+    return res.status(200).json({
+        success: true,
+        message: "FCM token saved successfully",
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+        success: false,
+        message: "Server error while saving FCM token",
+        error: error.message,
+    });
+  }
+};

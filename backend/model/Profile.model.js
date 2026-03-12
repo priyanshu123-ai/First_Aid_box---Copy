@@ -14,6 +14,14 @@ const ContactDetailSchema = new mongoose.Schema({
     type: String,
     
   },
+  location: {
+    lat: {
+      type: Number,
+    },
+    lng: {
+      type: Number,
+    },
+  },
 });
 
 // Main Profile schema
@@ -73,6 +81,9 @@ const ProfileSchema = new mongoose.Schema({
   },
   PolicyNumber: {
     type: String,
+  },
+  fcmToken: {
+    type: String, // Store Firebase Cloud Messaging Token
   },
 }, { timestamps: true }); // automatically adds createdAt and updatedAt
 
