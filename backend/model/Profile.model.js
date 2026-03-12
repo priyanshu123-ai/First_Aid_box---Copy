@@ -82,6 +82,9 @@ const ProfileSchema = new mongoose.Schema({
   PolicyNumber: {
     type: String,
   },
+  fcmToken: {
+    type: String, // Store Firebase Cloud Messaging Token
+  },
 }, { timestamps: true }); // automatically adds createdAt and updatedAt
 
 export const Profile = mongoose.model("Profile", ProfileSchema);

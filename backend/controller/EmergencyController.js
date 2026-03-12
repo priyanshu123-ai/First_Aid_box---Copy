@@ -1,4 +1,5 @@
 import axios from "axios";
+import sendPushNotification from "../utils/pushNotification.js";
 
 export const getNearestHospitals = async (req, res) => {
   try {
@@ -78,3 +79,59 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const d = R * c; // Distance in km
   return d;
 }
+
+
+export const triggerSOS = async (req, res) => {
+  try {
+    const { detail, location } = req.body;
+    
+    if (!detail || !location) {
+        return res.status(400).json({ success: false, message: "User details and location are required" });
+    }
+
+    if (!detail.contactDetails || detail.contactDetails.length === 0) {
+        return res.status(404).json({ success: false, message: "No emergency contacts found" });
+    }
+
+    // Prepare message content
+    const title = "🚨 EMERGENCY ALERT 🚨";
+    const body = `${detail.FullName || 'A user'} is in distress and has triggered an SOS alert. Please check the app for their live location.`;
+    const locationUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+
+    // Array to keep track of successful pushes
+    const successfulPushes = [];
+
+    // Loop through contacts and find profiles matching their phone numbers
+    for (const contact of detail.contactDetails) {
+        // Find profile with this phone number
+        // Clean the phone number string slightly if needed
+        const contactPhone = contact.phoneNumber.trim(); 
+        
+        try {
+            // Import Profile model lazily to avoid circular dependencies if any, otherwise import at top
+            const { Profile } = await import("../model/Profile.model.js");
+            
+            // Note: In real scenarios, phone number formatting (e.g., country codes) should match
+            const contactProfile = await Profile.findOne({ phone: contactPhone });
+
+            if (contactProfile && contactProfile.fcmToken) {
+                // We found a registered user with a device token
+                await sendPushNotification(contactProfile.fcmToken, title, body, locationUrl);
+                successfulPushes.push(contact.name);
+            }
+        } catch (err) {
+            console.error(`Error processing contact ${contact.name}:`, err);
+        }
+    }
+
+    res.status(200).json({ 
+        success: true, 
+        message: "Push alerts processed",
+        notifiedContacts: successfulPushes
+    });
+
+  } catch (error) {
+     console.error("SOS Trigger Error:", error);
+     res.status(500).json({ success: false, message: "Server error triggering SOS push notifications" });
+  }
+};

@@ -14,11 +14,42 @@ import HeartRateChecker from './Pages/HeartRate'
 import WatchBluetoothConnect from './Pages/Watch'
 import ProfileView from './Pages/ProfileView'
 import HealthWallet from './Pages/HealthWallet'
+import { requestFirebaseToken, onMessageListener } from './lib/firebase'
+import { toast } from 'react-toastify'
+import { useContext, useEffect } from 'react'
+import { AuthContext } from './context/AuthContext'
 
 
 const App = () => {
   const location = useLocation();
   const isProfileView = location.pathname.startsWith('/profile-view');
+  const { authUser } = useContext(AuthContext) || {};
+
+  useEffect(() => {
+    // Request FCM Token
+    const setupFirebase = async () => {
+      // Use authUser email if available to link token to profile
+      const email = authUser?.email || localStorage.getItem("userEmail");
+      if (email) {
+         await requestFirebaseToken(email);
+      } else {
+         await requestFirebaseToken(); // Just request permission without saving to DB yet
+      }
+    };
+    
+    setupFirebase();
+
+    // Listen for foreground push notifications
+    onMessageListener()
+      .then((payload) => {
+        console.log("Foreground push notification received:", payload);
+        toast.info(`🚨 ${payload.notification.title}: ${payload.notification.body}`, {
+           position: "top-center",
+           autoClose: 10000,
+        });
+      })
+      .catch((err) => console.log('Failed to listen for messages: ', err));
+  }, [authUser]);
 
   return (
     <div>
