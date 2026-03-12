@@ -316,15 +316,22 @@ const HealthWallet = () => {
 
   const handleOcr = async (id) => {
     setOcrLoading(true);
+    let extractedText = null;
     try {
       const res = await axios.post("http://localhost:4000/api/v5/prescription/ocr", { prescriptionId: id }, { withCredentials: true });
       if (res.data?.data?.ocrText) {
-        setSelectedRx((prev) => ({ ...prev, ocrText: res.data.data.ocrText }));
-        setSavedRx((prev) => prev.map((r) => r._id === id ? { ...r, ocrText: res.data.data.ocrText } : r));
-        toast.success("Text extracted!");
+        extractedText = res.data.data.ocrText;
+        setSelectedRx((prev) => ({ ...prev, ocrText: extractedText }));
+        setSavedRx((prev) => prev.map((r) => r._id === id ? { ...r, ocrText: extractedText } : r));
+        toast.success("Text extracted! Analyzing now...");
       }
     } catch { toast.error("OCR failed. Try again."); }
     setOcrLoading(false);
+    
+    // Auto-chain AI Analysis if OCR succeeded
+    if (extractedText) {
+      handleAiAnalysis(id);
+    }
   };
 
   const handleAiAnalysis = async (id) => {
@@ -697,18 +704,11 @@ const HealthWallet = () => {
 
                       {/* Action Buttons */}
                       <div className="flex flex-wrap gap-2">
-                        <Button onClick={() => handleOcr(selectedRx._id)} disabled={ocrLoading}
+                        <Button onClick={() => handleOcr(selectedRx._id)} disabled={ocrLoading || aiLoading}
                           className="bg-blue-600 hover:bg-blue-700">
-                          {ocrLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
-                          {ocrLoading ? "Extracting..." : "Extract Text (OCR)"}
+                          {(ocrLoading || aiLoading) ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+                          {ocrLoading ? "Extracting..." : aiLoading ? "Analyzing..." : selectedRx.ocrText ? "Re-Extract & Analyze" : "Extract & Analyze"}
                         </Button>
-                        {selectedRx.ocrText && (
-                          <Button onClick={() => handleAiAnalysis(selectedRx._id)} disabled={aiLoading}
-                            className="bg-purple-600 hover:bg-purple-700">
-                            {aiLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Stethoscope className="h-4 w-4 mr-1" />}
-                            {aiLoading ? "Analyzing..." : "AI Analysis"}
-                          </Button>
-                        )}
                         <Button onClick={() => handleDeleteRx(selectedRx._id)} variant="destructive" size="sm">
                           <Trash2 className="h-4 w-4 mr-1" /> Delete
                         </Button>

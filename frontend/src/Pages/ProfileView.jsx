@@ -53,7 +53,8 @@ const ProfileView = () => {
           phone: decoded.p || "",
           bloodGroup: decoded.bg || "",
           Height: decoded.h || "",
-          Weight: decoded.w || ""
+          Weight: decoded.w || "",
+          ec: decoded.ec || []
         });
 
         setLoading(false);
@@ -144,9 +145,13 @@ const ProfileView = () => {
 
       setHospitals(nearbyHospitals);
 
+      const contactEmails = (profile.ec || profile.contactDetails || [])
+        .map(c => c.e || c.email)
+        .filter(Boolean);
+
       // Send mail
       await axios.post("http://localhost:4000/api/v4/mail", {
-        email: profile.email,
+        email: [...contactEmails, profile.email].filter(Boolean),
         name: profile.FullName,
         phoneNumber: profile.phone,
         location: { lat, lng },
