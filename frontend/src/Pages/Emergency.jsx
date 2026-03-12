@@ -56,11 +56,12 @@ const Emergency = () => {
             setNearestHospitals(response.data.data);
           }
 
-          // Now send SOS email
+          // Now send SOS email and Trigger Push Notifications
           await handleEmergency(coords);
+          // Send WhatsApp message
           await sendWhatsAppMessage(coords);
 
-          setAlertsSent(["SMS", "Email", "WhatsApp"]);
+          setAlertsSent(["SMS", "Email", "WhatsApp", "Push"]);
           toast.success("📍 SOS alert and location sent successfully!");
         } catch (error) {
           console.error(error);
@@ -129,11 +130,26 @@ url:https://stunning-speculoos-18716f.netlify.app/
     console.log(detail.email,detail.relation,detail.phoneNumber)
 
     toast.success("🚨 SOS alert sent to your registered email!");
+
+    // ✨ NEW: Trigger Push Notifications to emergency contacts
+    try {
+       await axios.post("http://localhost:4000/api/v4/sos", {
+          detail: detail,
+          location: coords
+       });
+       toast.success("📲 Push notifications dispatched to emergency contacts!");
+    } catch (pushErr) {
+       console.error("Failed to trigger push notifications:", pushErr);
+       // We don't want to show an error toaster here if email/whatsapp already succeeded 
+       // to avoid confusing the user during an emergency, but log it.
+    }
+
   } catch (error) {
     console.error(error);
-    toast.error("❌ Failed to send SOS alert");
+    toast.error("❌ Failed to send SOS email alert");
   }
 };
+
 
 
   return (
@@ -206,7 +222,7 @@ url:https://stunning-speculoos-18716f.netlify.app/
                   )}
 
                   <div className="space-y-3 max-w-md mx-auto">
-                    {["SMS", "Email", "WhatsApp"].map((method) => (
+                    {["SMS", "Email", "WhatsApp", "Push"].map((method) => (
                       <div
                         key={method}
                         className={`flex items-center gap-3 p-3 rounded-lg transition-all ${

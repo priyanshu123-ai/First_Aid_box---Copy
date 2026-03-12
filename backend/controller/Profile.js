@@ -173,6 +173,38 @@ export const profileByPersonName = async (req, res) => {
   }
 };
 
+// Save FCM Token
+export const saveFCMToken = async (req, res) => {
+  try {
+    // Assuming the frontend sends the email or person_name to identify the user
+    // Using email here as it is unique in the profile
+    const { email, fcmToken } = req.body;
+    
+    if (!email || !fcmToken) {
+        return res.status(400).json({ success: false, message: "Email and FCM token are required" });
+    }
 
+    const profile = await Profile.findOneAndUpdate(
+        { email },
+        { fcmToken },
+        { new: true }
+    );
 
+    if (!profile) {
+        return res.status(404).json({ success: false, message: "Profile not found" });
+    }
 
+    return res.status(200).json({
+        success: true,
+        message: "FCM token saved successfully",
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+        success: false,
+        message: "Server error while saving FCM token",
+        error: error.message,
+    });
+  }
+};
