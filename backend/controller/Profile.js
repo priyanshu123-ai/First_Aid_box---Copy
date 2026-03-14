@@ -1,4 +1,5 @@
 import { Profile } from "../model/Profile.model.js";
+import HealthWallet from "../model/HealthWallet.model.js";
 
 // Create or update profile (POST)
 export const upsertProfile = async (req, res) => {
@@ -256,5 +257,40 @@ export const saveFCMToken = async (req, res) => {
         message: "Server error while saving FCM token",
         error: error.message,
     });
+  }
+};
+
+// Get profile + full health vault by profile ID (no auth — for emergency QR scan)
+export const profileWithVault = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const profile = await Profile.findById(id);
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "Profile not found" });
+    }
+
+    // Fetch health wallet for the same user (don't block if missing)
+    let vault = null;
+    try {
+      vault = await HealthWallet.findOne({ userId: profile.user });
+    } catch (_) {
+      vault = null;
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        profile,
+        vault: vault ? {
+          vaccinations: vault.vaccinations || [],
+          treatmentHistory: vault.treatmentHistory || [],
+          prescriptions: vault.prescriptions || [],
+        } : null,
+      }
+    });
+  } catch (error) {
+    console.error("profileWithVault error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
