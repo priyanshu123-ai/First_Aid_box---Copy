@@ -21,22 +21,22 @@ export const requestFirebaseToken = async (userEmail) => {
   try {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
-      const token = await getToken(messaging, { 
+      const token = await getToken(messaging, {
         // VAPID KEY: You MUST generate a proper Web Push certificate (VAPID key)
         // in your Firebase Console > Project Settings > Cloud Messaging > Web configuration
         // Replace this placeholder or move it to .env
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || "BN8HFS4D6u4WdaFJcvaXBMzCInKeHNRaGVtX6L_b_4-GCbsCCrpsq_AHnacSVShmq_qyiF1eOpkr-puTEFi9ksw" 
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || "BN8HFS4D6u4WdaFJcvaXBMzCInKeHNRaGVtX6L_b_4-GCbsCCrpsq_AHnacSVShmq_qyiF1eOpkr-puTEFi9ksw"
       });
 
       console.log("FCM Token generated:", token);
 
       if (userEmail) {
-         // Save to backend matching the updated ProfileRoute and controller
-         await axios.post("http://localhost:4000/api/v3/profile/token", {
-            email: userEmail,
-            fcmToken: token
-         });
-         console.log("Token sent to backend successfully.");
+        // Save to backend matching the updated ProfileRoute and controller
+        await axios.post("http://localhost:4000/api/v3/profile/token", {
+          email: userEmail,
+          fcmToken: token
+        });
+        console.log("Token sent to backend successfully.");
       }
       return token;
     } else {
