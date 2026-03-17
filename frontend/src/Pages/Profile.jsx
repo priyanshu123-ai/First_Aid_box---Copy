@@ -85,13 +85,13 @@ const Profile = () => {
         setEmergencyContacts(
           data.contactDetails?.length > 0
             ? data.contactDetails.map((c) => ({
-                id: Date.now() + Math.random(),
-                name: c.name,
-                phoneNumber: c.phoneNumber,
-                email: c.email || "",
-                relation: c.relation,
-                location: c.location || null,
-              }))
+              id: Date.now() + Math.random(),
+              name: c.name,
+              phoneNumber: c.phoneNumber,
+              email: c.email || "",
+              relation: c.relation,
+              location: c.location || null,
+            }))
             : [{ id: Date.now(), name: "", phoneNumber: "", email: "", relation: "", location: null }]
         );
         setProfileId(data._id);
@@ -196,13 +196,13 @@ const Profile = () => {
       setEmergencyContacts(
         res.data.data.contactDetails?.length > 0
           ? res.data.data.contactDetails.map((c) => ({
-              id: Date.now() + Math.random(),
-              name: c.name,
-              phoneNumber: c.phoneNumber,
-              email: c.email || "",
-              relation: c.relation,
-              location: c.location || null,
-            }))
+            id: Date.now() + Math.random(),
+            name: c.name,
+            phoneNumber: c.phoneNumber,
+            email: c.email || "",
+            relation: c.relation,
+            location: c.location || null,
+          }))
           : [{ id: Date.now(), name: "", phoneNumber: "", email: "", relation: "", location: null }]
       );
       if (!profileId) setProfileId(res.data.data._id);
@@ -254,14 +254,14 @@ const Profile = () => {
 
       // Calculate distance
       const getDistance = (lat1, lon1, lat2, lon2) => {
-        const R = 6371; 
+        const R = 6371;
         const dLat = ((lat2 - lat1) * Math.PI) / 180;
         const dLon = ((lon2 - lon1) * Math.PI) / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c; 
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
       };
 
       // Filter contacts that have both email and location
@@ -273,11 +273,11 @@ const Profile = () => {
         let minDistance = getDistance(lat, lng, nearestContact.location.lat, nearestContact.location.lng);
 
         for (let i = 1; i < validContacts.length; i++) {
-            const currentDist = getDistance(lat, lng, validContacts[i].location.lat, validContacts[i].location.lng);
-            if (currentDist < minDistance) {
-                minDistance = currentDist;
-                nearestContact = validContacts[i];
-            }
+          const currentDist = getDistance(lat, lng, validContacts[i].location.lat, validContacts[i].location.lng);
+          if (currentDist < minDistance) {
+            minDistance = currentDist;
+            nearestContact = validContacts[i];
+          }
         }
         targetEmails = [nearestContact.email];
       } else {
@@ -748,9 +748,8 @@ const Profile = () => {
                         </div>
                       )}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
               </div>
 
               {/* Insurance */}
@@ -819,5 +818,6 @@ const Profile = () => {
     </div>
   );
 };
+
 
 export default Profile;
