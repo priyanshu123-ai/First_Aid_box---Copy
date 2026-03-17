@@ -47,7 +47,7 @@ const Profile = () => {
   });
 
   const [emergencyContacts, setEmergencyContacts] = useState([
-    { id: Date.now(), name: "", phoneNumber: "", relation: "", location: null },
+    { id: Date.now(), name: "", phoneNumber: "", email: "", relation: "", location: null },
   ]);
 
   const [editMode, setEditMode] = useState(true);
@@ -88,10 +88,11 @@ const Profile = () => {
                 id: Date.now() + Math.random(),
                 name: c.name,
                 phoneNumber: c.phoneNumber,
+                email: c.email || "",
                 relation: c.relation,
                 location: c.location || null,
               }))
-            : [{ id: Date.now(), name: "", phoneNumber: "", relation: "", location: null }]
+            : [{ id: Date.now(), name: "", phoneNumber: "", email: "", relation: "", location: null }]
         );
         setProfileId(data._id);
         setDetail(data);
@@ -106,7 +107,7 @@ const Profile = () => {
       // 404 means no profile yet — that's fine, show the form
       if (err.response?.status === 404) {
         setForm((prev) => ({ ...prev, Person_name: person }));
-        setEmergencyContacts([{ id: Date.now(), name: "", phoneNumber: "", relation: "", location: null }]);
+        setEmergencyContacts([{ id: Date.now(), name: "", phoneNumber: "", email: "", relation: "", location: null }]);
         setProfileId(null);
         setEditMode(true);
       } else {
@@ -136,7 +137,7 @@ const Profile = () => {
   const addEmergencyContact = () => {
     setEmergencyContacts([
       ...emergencyContacts,
-      { id: Date.now() + Math.random(), name: "", phoneNumber: "", relation: "", location: null },
+      { id: Date.now() + Math.random(), name: "", phoneNumber: "", email: "", relation: "", location: null },
     ]);
   };
 
@@ -152,6 +153,7 @@ const Profile = () => {
         contactDetails: emergencyContacts.map((c) => ({
           name: c.name,
           phoneNumber: c.phoneNumber,
+          email: c.email,
           relation: c.relation,
           ...(c.location ? { location: c.location } : {}),
         })),
@@ -197,10 +199,11 @@ const Profile = () => {
               id: Date.now() + Math.random(),
               name: c.name,
               phoneNumber: c.phoneNumber,
+              email: c.email || "",
               relation: c.relation,
               location: c.location || null,
             }))
-          : [{ id: Date.now(), name: "", phoneNumber: "", relation: "", location: null }]
+          : [{ id: Date.now(), name: "", phoneNumber: "", email: "", relation: "", location: null }]
       );
       if (!profileId) setProfileId(res.data.data._id);
       setDetail(res.data.data);
@@ -212,27 +215,9 @@ const Profile = () => {
   };
 
   const getProfileQrData = () => {
-    // Encode profile data as base64 in a URL so the scanned page can show data + SOS button
-    const profileData = {
-      n: form.FullName,
-      dob: form.DateOfBirth,
-      e: form.email,
-      p: form.phone,
-      bg: form.bloodGroup,
-      h: form.Height,
-      w: form.Weight,
-      od: form.OrganDonor,
-      al: form.Allergies,
-      med: form.CurrentMedications,
-      mc: form.MedicalConditions,
-      ip: form.InsuranceProvider,
-      pn: form.PolicyNumber,
-      ec: emergencyContacts
-        .filter((c) => c.name || c.phoneNumber)
-        .map((c) => ({ n: c.name, p: c.phoneNumber, r: c.relation, l: c.location })),
-    };
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(profileData))));
-    return `${window.location.origin}/profile-view?data=${encoded}`;
+    // Only encode the profile ID — no health data in the QR URL (security)
+    // ProfileView will fetch all data (including full vault) from the server
+    return `${window.location.origin}/profile-view/${profileId}`;
   };
 
   const handleDownloadCard = () => {
@@ -267,10 +252,43 @@ const Profile = () => {
       const lng = position.coords.longitude;
       const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 
-      // Build emergency contacts email list
-      const contactEmails = emergencyContacts
-        .filter((c) => c.email)
-        .map((c) => c.email);
+      // Calculate distance
+      const getDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371; 
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLon = ((lon2 - lon1) * Math.PI) / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c; 
+      };
+
+      // Filter contacts that have both email and location
+      const validContacts = emergencyContacts.filter(c => c.email && c.email.trim() !== "" && c.location);
+      let targetEmails = [];
+
+      if (validContacts.length > 0) {
+        let nearestContact = validContacts[0];
+        let minDistance = getDistance(lat, lng, nearestContact.location.lat, nearestContact.location.lng);
+
+        for (let i = 1; i < validContacts.length; i++) {
+            const currentDist = getDistance(lat, lng, validContacts[i].location.lat, validContacts[i].location.lng);
+            if (currentDist < minDistance) {
+                minDistance = currentDist;
+                nearestContact = validContacts[i];
+            }
+        }
+        targetEmails = [nearestContact.email];
+      } else {
+        // Fallback: everyone with an email
+        targetEmails = emergencyContacts.map(c => c.email).filter(Boolean);
+      }
+
+      // If absolutely no emails found on contacts, do not send to user themselves
+      // if (targetEmails.length === 0 && form.email) {
+      //     targetEmails = [form.email];
+      // }
 
       const contactDetails = emergencyContacts
         .filter((c) => c.name || c.phoneNumber)
@@ -293,7 +311,7 @@ const Profile = () => {
       await axios.post(
         "http://localhost:4000/api/v4/mail",
         {
-          email: [...contactEmails, form.email].filter(Boolean), // Include all emergency emails and the user's email
+          email: targetEmails,
           subject: `🚨 EMERGENCY SOS - ${form.FullName || "User"} needs help!`,
           message: message,
           location: mapsLink,
@@ -301,7 +319,7 @@ const Profile = () => {
         { withCredentials: true }
       );
 
-      toast.success("🚨 SOS Alert sent! Help is on the way.");
+      toast.success("🚨 SOS Alert sent to nearest emergency contact!");
     } catch (err) {
       console.error(err);
       if (err.code === 1 || err.message?.includes("denied")) {
@@ -515,7 +533,7 @@ const Profile = () => {
                         </Button>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Name</Label>
                         <Input
@@ -531,6 +549,15 @@ const Profile = () => {
                           value={c.phoneNumber}
                           onChange={(e) => handleContactChange(c.id, "phoneNumber", e.target.value)}
                           placeholder="+1 (555) 123-4567"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Email</Label>
+                        <Input
+                          type="email"
+                          value={c.email}
+                          onChange={(e) => handleContactChange(c.id, "email", e.target.value)}
+                          placeholder="contact@example.com"
                         />
                       </div>
                       <div className="space-y-2">
@@ -693,7 +720,14 @@ const Profile = () => {
                         <p className="text-muted-foreground flex items-center gap-2">
                           <Phone className="h-3 w-3" />
                           {c.phoneNumber || "No phone"}
-                      </p>
+                        </p>
+                        {c.email && (
+                          <p className="text-muted-foreground flex items-center gap-2">
+                            <Mail className="h-3 w-3" />
+                            {c.email}
+                          </p>
+                        )}
+                      </div>
                       {c.location && (
                         <div className="text-xs text-muted-foreground bg-muted p-2 rounded mt-2 border border-border">
                           <p className="flex items-center gap-1 font-medium text-foreground mb-1">

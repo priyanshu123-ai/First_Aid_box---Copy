@@ -3,8 +3,9 @@ import {
   profileDetailById,
   upsertProfile,
   updateProfileById,
-  profileByPersonName, // ✅ Import this controller too
-  saveFCMToken, // ✅ Import saveFCMToken controller
+  profileByPersonName,
+  saveFCMToken,
+  profileWithVault,
 } from "../controller/Profile.js";
 import isAuth from "../middleware/isAuth.js";
 
@@ -24,5 +25,8 @@ userProfileRoute.get("/profile/person/:type", isAuth, profileByPersonName); // �
 
 // 🟢 Save FCM token
 userProfileRoute.post("/profile/token", isAuth, saveFCMToken);
+
+// 🟡 Get profile + health vault (public, for emergency QR scan)
+userProfileRoute.get("/profile-with-vault/:id", profileWithVault);
 
 export default userProfileRoute;
