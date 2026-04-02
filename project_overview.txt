@@ -1,0 +1,60 @@
+# First Aid Box - Project Overview & Tech Stack
+
+## 1. Technology Stack Used
+
+### Frontend (Client-side)
+- **Core Framework**: React 19 (via Vite)
+- **Styling**: Tailwind CSS (customized with `framer-motion` for animations, `lucide-react` for icons, and `@radix-ui/react-*` libraries for accessible UI components).
+- **Routing & Networking**: `react-router-dom` for navigation, `axios` for HTTP requests to the backend.
+- **Mapping & Location**: `leaflet` and `react-leaflet` to display nearby hospitals and live maps.
+- **Additional Utilities**: 
+  - `firebase` for standard authentications or active real-time tracking streams.
+  - `html2canvas`, `jspdf`, `qrcode.react` for generating downloadable records or sharing health profiles.
+
+### Backend (Server-side)
+- **Core Framework**: Node.js with Express.js
+- **Database**: MongoDB (via `mongoose`)
+- **Authentication & Security**: JWT (`jsonwebtoken`) mapped through cookies (`cookie-parser`), passwords hashed using `bcryptjs`.
+- **AI & Integrations**: 
+  - **OpenAI** (`openai`): For the chatbot and medical Q&A logic.
+  - **Groq AI** (`groq-sdk`): Lightning-fast LLM integrations for intelligent data processing (like symptom checking or translating prescription OCR text).
+  - **Replicate**: Likely used for deeper image/vision models.
+- **File Management & OCR**:
+  - `cloudinary` + `multer` to handle uploading images (like prescription uploads).
+  - `tesseract.js` for Optical Character Recognition (OCR) to extract text out of medical files/images.
+- **Real-Time Communication**: `socket.io` to manage sockets for the `VideoCall` consultations.
+- **Others**: `nodemailer` (emailing), `fluent-ffmpeg` (media conversions), and Firebase Admin.
+
+---
+
+## 2. Project Flow & Architecture
+
+The application acts as a comprehensive "Digital First-Aid & Health Management" system. The flow of data is heavily API-driven, with the React frontend calling specific REST endpoints on the Node backend.
+
+### A. Authentication & Profile Flow
+- The user hits the `frontend` platform and signs up/logs in.
+- The request goes to `UserRoute.js` and `ProfileRoute.js`. The backend hashes passwords, generates a JSON Web Token (JWT), securely stores it in cookies, and initializes a Profile in MongoDB.
+
+### B. Health Wallet & OCR Flow
+1. Users navigate to the **Health Wallet UI**.
+2. They upload physical prescription images (`frontend -> backend ImageRoute.js / HealthWalletController`).
+3. The backend uses `multer` to accept the file and uploads it securely to **Cloudinary**.
+4. The backend then runs `Tesseract.js` to extract text (OCR) from that image.
+5. Due to messy OCR logs, the text is piped directly into **Groq AI (Llama 3.3)** on the backend to structure, summarize, or even translate the medical text efficiently. 
+6. Clean, structured prescription details are sent back to the user and saved in MongoDB.
+
+### C. AI Chatbot & Symptom Checker
+- Users open the **ChatBot (`Chatbot.jsx`)**.
+- Chat messages hit `ChatbotSchema.js` securely. The backend sends the prompt to the `OpenAI` API with a rigid "Medical Assistant" system prompt to avoid unauthorized medical diagnoses. The reply is sent back directly to the UI.
+- The **Symptom Checker** takes in manual inputs (age, gender, pain points) and relays it to an AI generation logic flow to estimate low/high severity.
+
+### D. Emergency Response & Map Flow (`LocationRoute.js` / `Hospital.jsx`)
+- In emergencies (or just looking for hospitals), the UI accesses the user's GPS coordinates.
+- Using `leaflet`, the map plots the user exactly where they are.
+- The backend parses the location and fetches nearby hospitals/clinics routing this info natively to the React view.
+
+### E. Live Video Consultations (`VideoCall.jsx`)
+- Integrated via `socket.io`. When a user attempts to call a doctor or an emergency contact, a socket room is joined, and peers exchange WebRTC connection streams. 
+
+### F. Push Notifications
+- Regulated heavily by Firebase Admin natively on the backend via `utils/pushNotification.js` to dispatch urgent alerts related to emergency events or medication follow-up times directly to devices.

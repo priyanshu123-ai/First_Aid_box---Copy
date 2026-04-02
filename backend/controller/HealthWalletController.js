@@ -5,7 +5,7 @@ import Groq from "groq-sdk";
 import dotenv from "dotenv";
 
 dotenv.config();
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "dummy_api_key_to_prevent_startup_crash" });
 
 // Get or create health wallet
 export const getHealthWallet = async (req, res) => {

@@ -7,13 +7,25 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const serviceAccountPath = join(__dirname, "../config/serviceAccountKey.json");
-const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, "utf-8"));
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+let isPushEnabled = false;
+
+try {
+  const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, "utf-8"));
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+  isPushEnabled = true;
+} catch (error) {
+  console.warn("⚠️ Warning: serviceAccountKey.json not found or invalid. Push notifications are disabled.");
+}
 
 const sendPushNotification = async (token, title, body, url = "https://stunning-speculoos-18716f.netlify.app/") => {
+  if (!isPushEnabled) {
+    console.log("Push notification skipped: service account is missing.");
+    return;
+  }
+
   const message = {
     notification: { title, body },
     token: token, // This is the unique device token from the frontend

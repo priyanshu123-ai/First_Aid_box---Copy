@@ -14,7 +14,7 @@ cloudinary.config({
 });
 
 // Configure Groq
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "dummy_api_key_to_prevent_startup_crash" });
 
 // ===== Upload Prescription Image to Cloudinary =====
 export const uploadPrescription = async (req, res) => {

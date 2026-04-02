@@ -2,7 +2,7 @@
 import OpenAI from "openai"; // ✅ Correct import
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, 
+  apiKey: process.env.OPENAI_API_KEY || "dummy_api_key_to_prevent_startup_crash", 
 });
 
 export const getChatResponse = async (req, res) => {
